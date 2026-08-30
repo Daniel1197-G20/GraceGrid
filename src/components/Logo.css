@@ -1,0 +1,101 @@
+.gracegrid-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-heading);
+  user-select: none;
+  text-decoration: none;
+}
+
+.logo-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-normal);
+}
+
+.gracegrid-logo:hover .logo-icon-wrapper {
+  transform: scale(1.05) rotate(1deg);
+}
+
+.logo-svg {
+  display: block;
+}
+
+.logo-bg-rect {
+  fill: #0B1320;
+  transition: fill var(--transition-fast);
+}
+
+.logo-grid-lines {
+  stroke: rgba(255, 255, 255, 0.2);
+}
+
+.logo-text-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-brand-name {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.logo-accent-text {
+  color: var(--primary);
+}
+
+.logo-pill-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+}
+
+/* Sizing variations */
+.logo-sm .logo-svg {
+  width: 28px;
+  height: 28px;
+}
+.logo-sm .logo-brand-name {
+  font-size: 1.125rem;
+}
+
+.logo-md .logo-svg {
+  width: 36px;
+  height: 36px;
+}
+.logo-md .logo-brand-name {
+  font-size: 1.35rem;
+}
+
+.logo-lg .logo-svg {
+  width: 46px;
+  height: 46px;
+}
+.logo-lg .logo-brand-name {
+  font-size: 1.75rem;
+}
+
+/* Inverted for dark backgrounds (e.g. dark footer / dark cards) */
+.logo-inverted .logo-brand-name {
+  color: #FFFFFF;
+}
+
+.logo-inverted .logo-bg-rect {
+  fill: #1E293B;
+}
+
+.logo-inverted .logo-pill-badge {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #4ADE80;
+  border-color: rgba(74, 222, 128, 0.3);
+}

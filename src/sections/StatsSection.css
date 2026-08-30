@@ -1,0 +1,150 @@
+.stats-overlap-section {
+  position: relative;
+  z-index: 10;
+  margin-top: -3.5rem;
+  padding-bottom: 3rem;
+}
+
+.stats-glass-card {
+  padding: clamp(2rem, 4vw, 3.25rem);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 60px -15px rgba(2, 28, 13, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.stats-card-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.stats-title {
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.stats-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.stat-metric-block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.stat-icon-halo {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  transition: transform var(--transition-fast);
+}
+
+.stat-metric-block:hover .stat-icon-halo {
+  transform: scale(1.1);
+}
+
+.stat-number {
+  font-family: var(--font-heading);
+  font-size: clamp(2.5rem, 4.5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-heading {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.stat-explanation {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 260px;
+}
+
+.stat-divider-line {
+  position: absolute;
+  right: -1rem;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: var(--border-light);
+}
+
+/* Bottom Ribbon */
+.stats-bottom-ribbon {
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ribbon-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.ribbon-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.ribbon-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .stats-metrics-row {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .stat-divider-line {
+    display: none;
+  }
+
+  .stats-bottom-ribbon {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

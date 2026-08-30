@@ -1,0 +1,115 @@
+/* Skeleton Shimmer Primitive with Pure CSS */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #E2E8F0;
+  display: block;
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.45) 20%,
+    rgba(255, 255, 255, 0.75) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: skeletonShimmer 1.6s infinite ease-in-out;
+}
+
+/* Dark Mode Shimmer */
+.skeleton-dark {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.skeleton-dark::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.06) 20%,
+    rgba(255, 255, 255, 0.16) 60%,
+    rgba(255, 255, 255, 0)
+  );
+}
+
+@keyframes skeletonShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Variants */
+.skeleton-text {
+  height: 1rem;
+  border-radius: 4px;
+}
+
+.skeleton-circular {
+  border-radius: 50%;
+}
+
+.skeleton-rectangular {
+  border-radius: 0;
+}
+
+.skeleton-rounded {
+  border-radius: var(--radius-md);
+}
+
+.skeleton-pill {
+  border-radius: var(--radius-pill);
+}
+
+.skeleton-text-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Skeleton Card Container */
+.skeleton-card-container {
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 1px solid var(--border-light);
+  padding: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px -5px rgba(5, 46, 22, 0.04);
+}
+
+.skeleton-card-container.dark {
+  background: rgba(5, 46, 22, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.skeleton-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.skeleton-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.skeleton-card-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.skeleton-card-container.dark .skeleton-card-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}

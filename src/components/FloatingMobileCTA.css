@@ -1,0 +1,54 @@
+.floating-mobile-bar {
+  display: none;
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  z-index: 999;
+  background: rgba(5, 46, 22, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-xl);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 20px 40px -10px rgba(2, 28, 13, 0.7), 0 0 25px rgba(22, 163, 74, 0.35);
+}
+
+.mobile-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-bar-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.bar-tag {
+  font-family: var(--font-heading);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+}
+
+.bar-title {
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.mobile-bar-btn {
+  min-height: 48px; /* 48px touch target for mobile accessibility */
+  padding: 0.65rem 1.25rem;
+}
+
+/* Only display on screens below 768px */
+@media (max-width: 768px) {
+  .floating-mobile-bar {
+    display: block;
+  }
+}

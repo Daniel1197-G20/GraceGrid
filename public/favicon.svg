@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="ggGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16A34A" />
+      <stop offset="100%" stop-color="#15803D" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#D4AF37" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#16A34A" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect width="48" height="48" rx="12" fill="#0F172A" />
+  <!-- Minimal grid background lines -->
+  <path d="M12 24H36M24 12V36" stroke="#334155" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
+  <!-- Central stylized cross-burst with graceful curves -->
+  <rect x="22" y="10" width="4" height="28" rx="2" fill="url(#ggGrad)" filter="url(#glow)"/>
+  <rect x="12" y="18" width="24" height="4" rx="2" fill="url(#ggGrad)" filter="url(#glow)"/>
+  <!-- Center Golden Radiance Seed -->
+  <circle cx="24" cy="20" r="3.5" fill="url(#goldGrad)" />
+</svg>

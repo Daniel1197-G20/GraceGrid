@@ -1,0 +1,196 @@
+.cinematic-features-section {
+  background-color: var(--bg-secondary);
+  position: relative;
+  overflow: hidden;
+}
+
+.relative-content {
+  position: relative;
+  z-index: 2;
+}
+
+.elevated-features-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1.75rem;
+}
+
+/* Base Card Style: 24px corners, Soft shadow, Hover lift */
+.elevated-feature-card {
+  background: #FFFFFF;
+  border-radius: 24px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 10px 30px -5px rgba(5, 46, 22, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+  padding: 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.elevated-feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #16A34A, #4ADE80);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.elevated-feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px -12px rgba(5, 46, 22, 0.14), 0 0 25px rgba(22, 163, 74, 0.1);
+  border-color: rgba(22, 163, 74, 0.4);
+}
+
+.elevated-feature-card:hover::before {
+  opacity: 1;
+}
+
+/* First 2 cards take 3 of 6 columns (half width each) */
+.card-featured-half {
+  grid-column: span 3;
+  padding: 2.5rem;
+}
+
+/* Bottom 3 cards take 2 of 6 columns (one-third width each) */
+.card-standard-third {
+  grid-column: span 2;
+}
+
+/* Card Header */
+.feature-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Green Circular Icon */
+.green-circular-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: #DCFCE7;
+  color: #16A34A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
+}
+
+.elevated-feature-card:hover .green-circular-icon-badge {
+  transform: scale(1.1) rotate(4deg);
+  background-color: #16A34A;
+  color: #FFFFFF;
+}
+
+.feature-pill-badge {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+}
+
+/* Body Content */
+.feature-body-content {
+  margin-bottom: 1.5rem;
+}
+
+.feature-item-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.65rem;
+}
+
+.feature-item-desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* Highlights */
+.feature-bullet-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.bullet-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.bullet-check {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Card Action Link */
+.feature-card-action {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+}
+
+.feature-inspect-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+  transition: gap var(--transition-fast), color var(--transition-fast);
+}
+
+.elevated-feature-card:hover .feature-inspect-link {
+  gap: 0.55rem;
+  color: var(--primary-hover);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .elevated-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .card-featured-half,
+  .card-standard-third {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .elevated-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-featured-half,
+  .card-standard-third {
+    grid-column: span 1;
+    padding: 1.75rem;
+  }
+}
