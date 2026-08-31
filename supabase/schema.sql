@@ -57,8 +57,18 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_waitlist_count() TO anon, authenticated, service_role;
 
--- 7. Enable Supabase Realtime for waitlist table
-ALTER PUBLICATION supabase_realtime ADD TABLE public.waitlist;
+-- 7. Enable Supabase Realtime for waitlist table idempotently
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'waitlist'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.waitlist;
+  END IF;
+END $$;
 
 -- 8. Add documentation comments
 COMMENT ON TABLE public.waitlist IS 'GraceGrid pre-launch early access waitlist registrations';

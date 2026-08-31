@@ -46,5 +46,15 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_waitlist_count() TO anon, authenticated, service_role;
 
--- Enable Realtime publication for waitlist table
-ALTER PUBLICATION supabase_realtime ADD TABLE public.waitlist;
+-- Enable Realtime publication for waitlist table idempotently
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+      AND schemaname = 'public' 
+      AND tablename = 'waitlist'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.waitlist;
+  END IF;
+END $$;
