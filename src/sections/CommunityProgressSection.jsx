@@ -3,6 +3,7 @@ import Badge from '../components/Badge';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import { 
   getWaitlistCount, 
+  getRecentWaitlistActivity,
   subscribeToWaitlistUpdates, 
   TARGET_WAITLIST_USERS, 
   DEFAULT_INITIAL_COUNT 
@@ -16,34 +17,30 @@ import {
 } from 'lucide-react';
 import './CommunityProgressSection.css';
 
-const DEFAULT_ACTIVITY_FEED = [
-  { id: 'act-1', name: 'Sarah', city: 'Lagos', time: '1m ago' },
-  { id: 'act-2', name: 'David', city: 'Abuja', time: '3m ago' },
-  { id: 'act-3', name: 'Esther', city: 'Accra', time: '6m ago' },
-  { id: 'act-4', name: 'Michael', city: 'Nairobi', time: '9m ago' },
-  { id: 'act-5', name: 'Grace', city: 'Port Harcourt', time: '12m ago' },
-  { id: 'act-6', name: 'Emmanuel', city: 'London', time: '15m ago' },
-  { id: 'act-7', name: 'Deborah', city: 'Atlanta', time: '18m ago' },
-  { id: 'act-8', name: 'Samuel', city: 'Houston', time: '24m ago' },
-];
-
 export const CommunityProgressSection = memo(function CommunityProgressSection() {
   const [target] = useState(TARGET_WAITLIST_USERS);
   const [joinedCount, setJoinedCount] = useState(DEFAULT_INITIAL_COUNT);
-  const [activities, setActivities] = useState(DEFAULT_ACTIVITY_FEED);
+  const [activities, setActivities] = useState([]);
   const [hasAnimated, setHasAnimated] = useState(false);
   const processedMembersRef = useRef(new Set());
 
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.15 });
 
-  // Fetch initial count from database and listen for real-time signups
+  // Fetch initial real count & real recent signups from Supabase database
   useEffect(() => {
     let isMounted = true;
 
-    // Load initial count
+    // Load initial real count
     getWaitlistCount().then((count) => {
       if (isMounted && typeof count === 'number') {
         setJoinedCount(count);
+      }
+    });
+
+    // Load initial real activity feed from database
+    getRecentWaitlistActivity(10).then((realActivities) => {
+      if (isMounted && Array.isArray(realActivities) && realActivities.length > 0) {
+        setActivities(realActivities);
       }
     });
 
@@ -73,11 +70,11 @@ export const CommunityProgressSection = memo(function CommunityProgressSection()
         const newActivity = {
           id: `live-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           name: firstName,
-          city: 'GraceGrid Fellowship',
+          city: 'GraceGrid Sanctuary',
           time: 'just now',
         };
 
-        setActivities((prev) => [newActivity, ...prev.slice(0, 11)]);
+        setActivities((prev) => [newActivity, ...prev.slice(0, 9)]);
       }
     });
 
@@ -194,37 +191,44 @@ export const CommunityProgressSection = memo(function CommunityProgressSection()
 
             {/* Auto-scrolling Vertical Activity Ticker Container */}
             <div className="ticker-scroll-viewport">
-              <div className="ticker-scroll-track animate-ticker-loop">
-                {/* First set of activities */}
-                {activities.map((item) => (
-                  <div key={`primary-${item.id}`} className="ticker-item-card">
-                    <span className="ticker-status-dot" aria-hidden="true" />
-                    <span className="ticker-item-text">
-                      <strong className="member-name">{item.name}</strong> joined from{' '}
-                      <span className="member-city">{item.city}</span>
-                    </span>
-                    <span className="ticker-time">
-                      <Clock size={12} className="time-icon" aria-hidden="true" />
-                      {item.time}
-                    </span>
-                  </div>
-                ))}
+              {activities.length === 0 ? (
+                <div className="ticker-item-card" style={{ justifyContent: 'center', marginTop: '1.25rem' }}>
+                  <span className="ticker-status-dot" aria-hidden="true" />
+                  <span className="ticker-item-text" style={{ textAlign: 'center' }}>
+                    <strong className="member-name">Early Access Open</strong> — Be the first believer to join the sanctuary!
+                  </span>
+                </div>
+              ) : (
+                <div className="ticker-scroll-track animate-ticker-loop">
+                  {/* First set of activities */}
+                  {activities.map((item) => (
+                    <div key={`primary-${item.id}`} className="ticker-item-card">
+                      <span className="ticker-status-dot" aria-hidden="true" />
+                      <span className="ticker-item-text">
+                        <strong className="member-name">{item.name}</strong> joined the sanctuary
+                      </span>
+                      <span className="ticker-time">
+                        <Clock size={12} className="time-icon" aria-hidden="true" />
+                        {item.time}
+                      </span>
+                    </div>
+                  ))}
 
-                {/* Duplicate set to enable seamless infinite loop */}
-                {activities.map((item) => (
-                  <div key={`dup-${item.id}`} className="ticker-item-card" aria-hidden="true">
-                    <span className="ticker-status-dot" />
-                    <span className="ticker-item-text">
-                      <strong className="member-name">{item.name}</strong> joined from{' '}
-                      <span className="member-city">{item.city}</span>
-                    </span>
-                    <span className="ticker-time">
-                      <Clock size={12} className="time-icon" />
-                      {item.time}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  {/* Duplicate set to enable seamless infinite loop */}
+                  {activities.length > 1 && activities.map((item) => (
+                    <div key={`dup-${item.id}`} className="ticker-item-card" aria-hidden="true">
+                      <span className="ticker-status-dot" />
+                      <span className="ticker-item-text">
+                        <strong className="member-name">{item.name}</strong> joined the sanctuary
+                      </span>
+                      <span className="ticker-time">
+                        <Clock size={12} className="time-icon" />
+                        {item.time}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

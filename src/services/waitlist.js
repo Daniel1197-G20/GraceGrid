@@ -2,7 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const TARGET_WAITLIST_USERS = 50;
-export const DEFAULT_INITIAL_COUNT = 27;
+export const DEFAULT_INITIAL_COUNT = 0;
 
 /**
  * Service function to submit a user to the GraceGrid waitlist.
@@ -161,21 +161,39 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
 }
 
 /**
+ * Helper to format relative timestamps
+ */
+function formatRelativeTime(dateString) {
+  if (!dateString) return 'recently';
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffSec = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
+
+  if (diffSec < 60) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+/**
  * Fetch total waitlist count dynamically from Supabase PostgreSQL.
- * Defaults to 27 if database is fresh, offline, or unconfigured.
+ * Returns the real database count (or 0 if empty / offline).
  *
  * @returns {Promise<number>}
  */
 export async function getWaitlistCount() {
   if (!isSupabaseConfigured) {
-    return DEFAULT_INITIAL_COUNT;
+    return 0;
   }
 
   try {
     // 1. Try secure RPC function
     const { data: rpcCount, error: rpcError } = await supabase.rpc('get_waitlist_count');
     if (!rpcError && typeof rpcCount === 'number') {
-      return Math.max(DEFAULT_INITIAL_COUNT, rpcCount);
+      return rpcCount;
     }
 
     // 2. Try direct count query
@@ -184,13 +202,44 @@ export async function getWaitlistCount() {
       .select('*', { count: 'exact', head: true });
 
     if (!countError && typeof count === 'number') {
-      return Math.max(DEFAULT_INITIAL_COUNT, count);
+      return count;
     }
   } catch (err) {
-    console.warn('[GraceGrid Waitlist] Unable to fetch count, falling back to default:', err);
+    console.warn('[GraceGrid Waitlist] Unable to fetch count, falling back to 0:', err);
   }
 
-  return DEFAULT_INITIAL_COUNT;
+  return 0;
+}
+
+/**
+ * Fetch recent waitlist signups (first names and relative timestamps) from Supabase PostgreSQL.
+ *
+ * @param {number} [limit=10]
+ * @returns {Promise<Array<{ id: string, name: string, city: string, time: string }>>}
+ */
+export async function getRecentWaitlistActivity(limit = 10) {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_recent_waitlist_activity', {
+      limit_count: limit,
+    });
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data.map((item) => ({
+        id: item.id,
+        name: item.first_name || 'Believer',
+        city: 'GraceGrid Sanctuary',
+        time: formatRelativeTime(item.created_at),
+      }));
+    }
+  } catch (err) {
+    console.warn('[GraceGrid Activity] Unable to fetch recent activity:', err);
+  }
+
+  return [];
 }
 
 /**
@@ -243,7 +292,9 @@ export function subscribeToWaitlistUpdates(onNewMember) {
 export default {
   joinWaitlist,
   getWaitlistCount,
+  getRecentWaitlistActivity,
   subscribeToWaitlistUpdates,
   TARGET_WAITLIST_USERS,
   DEFAULT_INITIAL_COUNT,
 };
+
