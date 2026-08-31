@@ -1,0 +1,425 @@
+/* ==============================================================================
+   GraceGrid — Community Progress Section Styles
+   ============================================================================== */
+
+.community-progress-section {
+  position: relative;
+  z-index: 12;
+  margin-top: -3.5rem;
+  padding-bottom: 2.5rem;
+}
+
+/* Premium Frosted Glass Container */
+.community-progress-card {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: clamp(2rem, 4vw, 3rem);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 25px 60px -15px rgba(2, 28, 13, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle Card Ambient Glow */
+.community-progress-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Header Group */
+.progress-card-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.live-pulse-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--primary-50);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-700);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: greenPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes greenPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.progress-main-heading {
+  font-family: var(--font-heading);
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.highlight-number {
+  color: #15803D;
+  font-weight: 900;
+}
+
+.target-number {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.progress-subtext {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.progress-subtext em {
+  font-style: italic;
+  color: #047857;
+  font-weight: 500;
+}
+
+/* Horizontal Animated Progress Bar */
+.progress-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 1.35rem 1.6rem;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+}
+
+.progress-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.progress-label-left {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.meta-icon {
+  color: var(--primary);
+}
+
+.progress-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.progress-ratio-text {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.progress-ratio-text strong {
+  color: var(--primary-700);
+  font-size: 1.05rem;
+}
+
+.progress-percent-badge {
+  background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
+  color: #FFFFFF;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+
+/* Progress Track & Fill */
+.progress-track {
+  width: 100%;
+  height: 16px;
+  background: #F1F5F9;
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.progress-fill-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #15803D 0%, #16A34A 45%, #22C55E 80%, #4ADE80 100%);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.45);
+}
+
+.progress-fill-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  animation: shineSwipe 2.5s infinite linear;
+}
+
+@keyframes shineSwipe {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.progress-markers-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  padding: 0 0.25rem;
+}
+
+.target-marker {
+  color: var(--primary-700);
+  font-weight: 700;
+}
+
+/* Live Activity Ticker */
+.ticker-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ticker-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.ticker-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.flame-icon {
+  color: #D97706;
+}
+
+.ticker-title {
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.ticker-sub {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* Ticker Scroll Viewport with Top & Bottom Fade Masks */
+.ticker-scroll-viewport {
+  position: relative;
+  height: 145px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  padding: 0.5rem;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 18%,
+    black 82%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 18%,
+    black 82%,
+    transparent 100%
+  );
+}
+
+.ticker-scroll-track {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.animate-ticker-loop {
+  animation: verticalTickerScroll 22s linear infinite;
+}
+
+.animate-ticker-loop:hover {
+  animation-play-state: paused;
+}
+
+@keyframes verticalTickerScroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+/* Individual Ticker Card */
+.ticker-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  transition: all var(--transition-fast);
+}
+
+.ticker-item-card:hover {
+  background: #FFFFFF;
+  border-color: var(--border-hover);
+  transform: translateX(4px);
+}
+
+.ticker-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  flex-shrink: 0;
+}
+
+.ticker-item-text {
+  flex: 1;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.member-city {
+  color: var(--primary-700);
+  font-weight: 600;
+}
+
+.ticker-time {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.time-icon {
+  color: var(--text-tertiary);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .community-progress-section {
+    margin-top: -2.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .community-progress-card {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .progress-bar-container {
+    padding: 1rem 1.15rem;
+  }
+
+  .progress-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .progress-stat-pill {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ticker-scroll-viewport {
+    height: 135px;
+  }
+
+  .ticker-item-card {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8125rem;
+  }
+}

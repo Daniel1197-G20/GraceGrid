@@ -19,6 +19,7 @@ import {
   Lock,
   AlertCircle
 } from 'lucide-react';
+import { joinWaitlist } from '../services/waitlist';
 import './WaitlistSection.css';
 
 export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSubmitWaitlist }) {
@@ -96,15 +97,20 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
     const generatedQueue = Math.floor(5120 + Math.random() * 260);
 
     try {
+      let result;
       if (onSubmitWaitlist) {
-        await onSubmitWaitlist({
+        result = await onSubmitWaitlist({
           fullName: targetName,
           email: targetEmail,
           role: targetRole,
           timestamp: new Date().toISOString()
         });
       } else {
-        await new Promise((resolve) => setTimeout(resolve, 650));
+        result = await joinWaitlist({
+          fullName: targetName,
+          email: targetEmail,
+          role: targetRole
+        });
       }
 
       setQueueNumber(generatedQueue);
@@ -121,12 +127,19 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
       } catch (err) {}
 
       if (onShowToast) {
-        onShowToast(`Welcome to GraceGrid, ${targetName.split(' ')[0]}! You are spot #${generatedQueue}.`);
+        onShowToast(
+          result?.message || "🎉 Welcome! You're officially on the GraceGrid waitlist.",
+          'success'
+        );
       }
     } catch (err) {
       setIsSubmitting(false);
       setIsSubmitted(false);
-      setGeneralError(err.message || 'We could not reserve your spot right now. Please check your connection and try again.');
+      const errorMessage = err?.message || 'Something went wrong. Please try again.';
+      setGeneralError(errorMessage);
+      if (onShowToast) {
+        onShowToast(errorMessage, 'error');
+      }
     }
   }, [formData, validateForm, onSubmitWaitlist, onShowToast]);
 
@@ -315,7 +328,7 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
               </div>
 
               <span className="success-subheading">WELCOME TO THE BODY</span>
-              <h3 className="success-main-title">You're On The Early Access List!</h3>
+              <h3 className="success-main-title">You're officially on the GraceGrid waitlist 🎉</h3>
 
               <div className="queue-spot-banner">
                 <span className="spot-title">YOUR PRIORITY SPOT IN LINE</span>

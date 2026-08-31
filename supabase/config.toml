@@ -1,0 +1,13 @@
+# Supabase CLI project configuration
+project_id = "gracegrid"
+
+[api]
+port = 54321
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+
+[functions.join-waitlist]
+verify_jwt = false

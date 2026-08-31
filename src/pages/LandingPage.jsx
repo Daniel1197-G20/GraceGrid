@@ -1,7 +1,9 @@
 import React, { useState, lazy, Suspense, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import HeroSection from '../sections/HeroSection';
+import CommunityProgressSection from '../sections/CommunityProgressSection';
 import StatsSection from '../sections/StatsSection';
+import SupportMissionSection from '../sections/SupportMissionSection';
 import WaitlistSection from '../sections/WaitlistSection';
 import FloatingMobileCTA from '../components/FloatingMobileCTA';
 import Toast from '../components/Toast';
@@ -16,12 +18,12 @@ const AboutSection = lazy(() => import('../sections/AboutSection'));
 const FooterSection = lazy(() => import('../sections/FooterSection'));
 
 export default function LandingPage() {
-  const [toastMessage, setToastMessage] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  const showToast = useCallback((message) => {
-    setToastMessage(message);
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ message, type });
     setTimeout(() => {
-      setToastMessage(null);
+      setToast(null);
     }, 4500);
   }, []);
 
@@ -34,6 +36,12 @@ export default function LandingPage() {
       <main id="main-content" role="main">
         {/* Above-the-fold Hero Introduction with 2 CTA Buttons */}
         <HeroSection />
+
+        {/* Live Community Progress and Cohort Goal Target */}
+        <ErrorBoundary>
+          <CommunityProgressSection />
+        </ErrorBoundary>
+
         <StatsSection />
 
         {/* Lazy Loaded Features Section with Skeleton Fallback and Error Boundary */}
@@ -48,6 +56,11 @@ export default function LandingPage() {
           <Suspense fallback={<AboutSkeleton />}>
             <AboutSection />
           </Suspense>
+        </ErrorBoundary>
+
+        {/* Support the Mission: Direct Bank Transfer Donation */}
+        <ErrorBoundary>
+          <SupportMissionSection onShowToast={showToast} />
         </ErrorBoundary>
 
         {/* Dedicated Single Waitlist Section: 'Be the First to Know' */}
@@ -67,11 +80,11 @@ export default function LandingPage() {
       <FloatingMobileCTA />
 
       {/* Global Notification Toast */}
-      {toastMessage && (
+      {toast && (
         <Toast
-          message={toastMessage}
-          type="success"
-          onClose={() => setToastMessage(null)}
+          message={toast.message}
+          type={toast.type || 'success'}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

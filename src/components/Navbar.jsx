@@ -51,6 +51,7 @@ export const Navbar = memo(function Navbar() {
     { id: 'community', label: 'Community' },
     { id: 'features', label: 'Features' },
     { id: 'about', label: 'About' },
+    { id: 'support', label: 'Support' },
     { id: 'waitlist', label: 'Waitlist' }
   ], []);
 
