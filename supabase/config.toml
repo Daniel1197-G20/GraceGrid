@@ -9,6 +9,9 @@ max_rows = 1000
 [db]
 port = 54322
 
+[functions.super-task]
+verify_jwt = false
+
 [functions.join-waitlist]
 verify_jwt = false
 

@@ -6,7 +6,7 @@ export const DEFAULT_INITIAL_COUNT = 0;
 
 /**
  * Service function to submit a user to the GraceGrid waitlist.
- * Invokes the Supabase Edge Function `join-waitlist` which securely handles
+ * Invokes the Supabase Edge Function `super-task` which securely handles
  * DB insertion into PostgreSQL and transactional welcome email dispatch via Brevo.
  *
  * @param {Object} payload
@@ -42,8 +42,7 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
     console.warn(
       '[GraceGrid Waitlist] Supabase environment variables not configured. Simulating response in development mode.'
     );
-    // Graceful dev simulation delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 600));
     
     const mockData = {
       id: 'dev-simulation-id',
@@ -53,7 +52,6 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
       createdAt: new Date().toISOString(),
     };
 
-    // Dispatch custom event for real-time progress bar reaction
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('gracegrid:waitlist-joined', {
@@ -64,90 +62,57 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
 
     return {
       success: true,
-      message: "🎉 Welcome! You're officially on the GraceGrid waitlist.",
+      message: "🎉 You're officially on the GraceGrid waitlist!",
       data: mockData,
     };
   }
 
+  // 3. Primary Path: Invoke Supabase Edge Function 'super-task'
   try {
-    // 3. Primary Path: Invoke Supabase Edge Function 'join-waitlist' (DB insert + Brevo sync & email)
-    let edgeFunctionFailed = false;
-    try {
-      const { data, error } = await supabase.functions.invoke('join-waitlist', {
-        body: {
-          fullName: trimmedName,
-          email: normalizedEmail,
-          role: trimmedRole,
-        },
-      });
+    const { data, error } = await supabase.functions.invoke('super-task', {
+      body: {
+        fullName: trimmedName,
+        email: normalizedEmail,
+        role: trimmedRole,
+      },
+    });
 
-      if (!error && data?.success) {
-        const payloadResult = {
-          success: true,
-          message: data.message || "🎉 Welcome! You're officially on the GraceGrid waitlist.",
-          data: data.data || {
-            fullName: trimmedName,
-            email: normalizedEmail,
-            role: trimmedRole,
-          },
-        };
-
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('gracegrid:waitlist-joined', {
-              detail: payloadResult.data,
-            })
-          );
+    if (error) {
+      const status = error.context?.status;
+      let errorBody = null;
+      try {
+        if (error.context && typeof error.context.json === 'function') {
+          errorBody = await error.context.json();
         }
+      } catch (_) {}
 
-        return payloadResult;
-      }
-
-      // Check if Edge Function reported a duplicate
       if (
-        error?.context?.status === 409 ||
-        data?.status === 'duplicate' ||
-        (error?.message && error.message.includes('already on the GraceGrid waitlist')) ||
-        (data?.error && data.error.includes('already on the GraceGrid waitlist'))
+        status === 409 ||
+        errorBody?.status === 'duplicate' ||
+        errorBody?.error?.includes('already on the GraceGrid waitlist') ||
+        error.message?.includes('already on the GraceGrid waitlist') ||
+        error.message?.includes('409')
       ) {
         throw new Error("You're already on the GraceGrid waitlist.");
       }
 
-      edgeFunctionFailed = true;
-    } catch (edgeErr) {
-      if (edgeErr.message === "You're already on the GraceGrid waitlist.") {
-        throw edgeErr;
+      if (
+        status === 400 ||
+        errorBody?.error?.includes('characters') ||
+        errorBody?.error?.includes('valid email')
+      ) {
+        throw new Error(errorBody?.error || 'Please provide a valid name and email address.');
       }
-      edgeFunctionFailed = true;
-      console.warn('[GraceGrid Waitlist] Edge function unavailable, executing direct database fallback:', edgeErr.message);
+
+      console.error('[GraceGrid Waitlist] super-task invocation error:', error, errorBody);
+      throw new Error('Something went wrong. Please try again.');
     }
 
-    // 4. Fallback Path: Direct insert into public.waitlist table
-    if (edgeFunctionFailed) {
-      const { data: dbData, error: dbError } = await supabase
-        .from('waitlist')
-        .insert([
-          {
-            full_name: trimmedName,
-            email: normalizedEmail,
-            role: trimmedRole,
-          },
-        ])
-        .select('id, full_name, email, role, created_at')
-        .single();
-
-      if (dbError) {
-        if (dbError.code === '23505' || dbError.message?.includes('duplicate') || dbError.message?.includes('unique')) {
-          throw new Error("You're already on the GraceGrid waitlist.");
-        }
-        console.error('[GraceGrid Waitlist DB Error]:', dbError);
-        throw new Error(dbError.message || 'Something went wrong saving your registration.');
-      }
-
-      const directResult = {
+    if (data?.success) {
+      const payloadResult = {
         success: true,
-        message: "🎉 Welcome! You're officially on the GraceGrid waitlist.",
-        data: dbData || {
+        message: data.message || "🎉 You're officially on the GraceGrid waitlist!",
+        data: data.data || {
           fullName: trimmedName,
           email: normalizedEmail,
           role: trimmedRole,
@@ -157,15 +122,20 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('gracegrid:waitlist-joined', {
-            detail: directResult.data,
+            detail: payloadResult.data,
           })
         );
       }
 
-      return directResult;
+      return payloadResult;
     }
+
+    if (data?.status === 'duplicate' || data?.error?.includes('already on the GraceGrid waitlist')) {
+      throw new Error("You're already on the GraceGrid waitlist.");
+    }
+
+    throw new Error(data?.error || 'Something went wrong. Please try again.');
   } catch (err) {
-    // If it's already our formatted user-facing message, rethrow it
     if (
       err.message === "You're already on the GraceGrid waitlist." ||
       err.message === 'Please enter your full name.' ||
@@ -177,7 +147,7 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
     }
 
     console.error('[GraceGrid Waitlist Service Error]:', err);
-    throw new Error(err?.message || 'Something went wrong. Please try again.');
+    throw new Error('Something went wrong. Please try again.');
   }
 }
 
