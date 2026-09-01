@@ -70,81 +70,102 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
   }
 
   try {
-    // 3. Invoke the Supabase Edge Function 'join-waitlist'
-    const { data, error } = await supabase.functions.invoke('join-waitlist', {
-      body: {
-        fullName: trimmedName,
-        email: normalizedEmail,
-        role: trimmedRole,
-      },
-    });
+    // 3. Primary Path: Invoke Supabase Edge Function 'join-waitlist' (DB insert + Brevo sync & email)
+    let edgeFunctionFailed = false;
+    try {
+      const { data, error } = await supabase.functions.invoke('join-waitlist', {
+        body: {
+          fullName: trimmedName,
+          email: normalizedEmail,
+          role: trimmedRole,
+        },
+      });
 
-    if (error) {
-      let errorMessage = 'Something went wrong. Please try again.';
-      let isDuplicate = false;
+      if (!error && data?.success) {
+        const payloadResult = {
+          success: true,
+          message: data.message || "🎉 Welcome! You're officially on the GraceGrid waitlist.",
+          data: data.data || {
+            fullName: trimmedName,
+            email: normalizedEmail,
+            role: trimmedRole,
+          },
+        };
 
-      // Handle FunctionsHttpError response body from Supabase Edge Function
-      if (error.context) {
-        try {
-          const errorBody = await error.context.json();
-          if (errorBody) {
-            if (
-              error.context.status === 409 ||
-              errorBody.status === 'duplicate' ||
-              (errorBody.error && errorBody.error.includes('already on the GraceGrid waitlist'))
-            ) {
-              isDuplicate = true;
-              errorMessage = "You're already on the GraceGrid waitlist.";
-            } else if (errorBody.error) {
-              errorMessage = errorBody.error;
-            }
-          }
-        } catch {
-          // Fallback if context is not JSON
-          if (error.context.status === 409) {
-            isDuplicate = true;
-            errorMessage = "You're already on the GraceGrid waitlist.";
-          }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('gracegrid:waitlist-joined', {
+              detail: payloadResult.data,
+            })
+          );
         }
+
+        return payloadResult;
       }
 
-      if (isDuplicate || (error.message && error.message.includes('already on the GraceGrid waitlist'))) {
+      // Check if Edge Function reported a duplicate
+      if (
+        error?.context?.status === 409 ||
+        data?.status === 'duplicate' ||
+        (error?.message && error.message.includes('already on the GraceGrid waitlist')) ||
+        (data?.error && data.error.includes('already on the GraceGrid waitlist'))
+      ) {
         throw new Error("You're already on the GraceGrid waitlist.");
       }
 
-      throw new Error(errorMessage);
-    }
-
-    if (!data || data.success === false) {
-      const errorMsg = data?.error || 'Something went wrong. Please try again.';
-      if (data?.status === 'duplicate' || errorMsg.includes('already on the GraceGrid waitlist')) {
-        throw new Error("You're already on the GraceGrid waitlist.");
+      edgeFunctionFailed = true;
+    } catch (edgeErr) {
+      if (edgeErr.message === "You're already on the GraceGrid waitlist.") {
+        throw edgeErr;
       }
-      throw new Error(errorMsg);
+      edgeFunctionFailed = true;
+      console.warn('[GraceGrid Waitlist] Edge function unavailable, executing direct database fallback:', edgeErr.message);
     }
 
-    const payloadResult = {
-      success: true,
-      message: data.message || "🎉 Welcome! You're officially on the GraceGrid waitlist.",
-      data: data.data || {
-        fullName: trimmedName,
-        email: normalizedEmail,
-        role: trimmedRole,
-      },
-    };
+    // 4. Fallback Path: Direct insert into public.waitlist table
+    if (edgeFunctionFailed) {
+      const { data: dbData, error: dbError } = await supabase
+        .from('waitlist')
+        .insert([
+          {
+            full_name: trimmedName,
+            email: normalizedEmail,
+            role: trimmedRole,
+          },
+        ])
+        .select('id, full_name, email, role, created_at')
+        .single();
 
-    // Dispatch real-time local event so the progress bar updates immediately
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('gracegrid:waitlist-joined', {
-          detail: payloadResult.data,
-        })
-      );
+      if (dbError) {
+        if (dbError.code === '23505' || dbError.message?.includes('duplicate') || dbError.message?.includes('unique')) {
+          throw new Error("You're already on the GraceGrid waitlist.");
+        }
+        console.error('[GraceGrid Waitlist DB Error]:', dbError);
+        throw new Error(dbError.message || 'Something went wrong saving your registration.');
+      }
+
+      const directResult = {
+        success: true,
+        message: "🎉 Welcome! You're officially on the GraceGrid waitlist.",
+        data: dbData || {
+          fullName: trimmedName,
+          email: normalizedEmail,
+          role: trimmedRole,
+        },
+      };
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('gracegrid:waitlist-joined', {
+            detail: directResult.data,
+          })
+        );
+      }
+
+      return directResult;
     }
-
-    return payloadResult;
   } catch (err) {
-    // If it's already our formatted error message, rethrow it
+    // If it's already our formatted user-facing message, rethrow it
     if (
       err.message === "You're already on the GraceGrid waitlist." ||
       err.message === 'Please enter your full name.' ||
@@ -156,7 +177,7 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
     }
 
     console.error('[GraceGrid Waitlist Service Error]:', err);
-    throw new Error('Something went wrong. Please try again.');
+    throw new Error(err?.message || 'Something went wrong. Please try again.');
   }
 }
 

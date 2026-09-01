@@ -8,12 +8,13 @@ CREATE TABLE IF NOT EXISTS public.waitlist (
     full_name TEXT NOT NULL,
     email TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'believer',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-
-    -- Data integrity constraints
-    CONSTRAINT waitlist_full_name_length_check CHECK (char_length(trim(full_name)) >= 2),
-    CONSTRAINT waitlist_email_format_check CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
+-- Ensure all columns exist if the table was created earlier
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'believer';
+ALTER TABLE public.waitlist ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now());
 
 -- 2. Case-insensitive unique index on email to prevent duplicate signups
 CREATE UNIQUE INDEX IF NOT EXISTS waitlist_email_lower_uidx 

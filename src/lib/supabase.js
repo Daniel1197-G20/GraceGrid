@@ -4,26 +4,29 @@ import { createClient } from '@supabase/supabase-js';
  * Supabase client configuration for GraceGrid frontend.
  * Reads public anonymous credentials from Vite environment variables.
  */
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const rawAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+
+// Clean URL (strip trailing slashes or accidental /rest/v1 paths)
+const cleanedUrl = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
 export const isSupabaseConfigured = Boolean(
-  supabaseUrl &&
-  supabaseAnonKey &&
-  supabaseUrl !== 'https://your-project-ref.supabase.co' &&
-  supabaseAnonKey !== 'your-anon-key-here'
+  cleanedUrl &&
+  rawAnonKey &&
+  cleanedUrl !== 'https://your-project-ref.supabase.co' &&
+  rawAnonKey !== 'your-anon-key-here'
 );
 
 if (!isSupabaseConfigured && import.meta.env.DEV) {
   console.warn(
-    '[GraceGrid Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env file. Please configure them to connect to your Supabase backend.'
+    '[GraceGrid Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env.local file. Please configure them to connect to your Supabase backend.'
   );
 }
 
 // Initialize Supabase Client instance (fallback URL prevents crash if env is unset in dev)
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-anon-key',
+  cleanedUrl || 'https://placeholder.supabase.co',
+  rawAnonKey || 'placeholder-anon-key',
   {
     auth: {
       persistSession: false,
