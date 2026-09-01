@@ -1,16 +1,77 @@
-import React, { useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import Logo from '../components/Logo';
 import { LeafPattern } from '../components/DecorativeAssets';
 import { Heart, Sparkles, Send, ShieldCheck } from 'lucide-react';
 import './FooterSection.css';
 
+const BLESSING_VERSES = [
+  {
+    verse: '“The grace of the Lord Jesus Christ and the love of God and the fellowship of the Holy Spirit be with you all.”',
+    reference: '2 Corinthians 13:14',
+  },
+  {
+    verse: '“The Lord is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside still waters.”',
+    reference: 'Psalm 23:1',
+  },
+  {
+    verse: '“Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge Him.”',
+    reference: 'Proverbs 3:5',
+  },
+  {
+    verse: '“Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you.”',
+    reference: 'Isaiah 41:10',
+  },
+  {
+    verse: '“Let all that you do be done in love. Stand firm in the faith; be courageous; be strong.”',
+    reference: '1 Corinthians 16:14',
+  },
+  {
+    verse: '“For I know the plans I have for you, declares the Lord, plans for peace and not for evil, to give you a future and a hope.”',
+    reference: 'Jeremiah 29:11',
+  },
+  {
+    verse: '“The Lord bless you and keep you; the Lord make His face shine upon you and be gracious to you.”',
+    reference: 'Numbers 6:24-25',
+  },
+  {
+    verse: '“Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God.”',
+    reference: 'Philippians 4:6',
+  },
+];
+
 export const FooterSection = memo(function FooterSection() {
+  const [activeVerseIndex, setActiveVerseIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
+
   const scrollTo = useCallback((e, id) => {
     e.preventDefault();
     const elem = document.getElementById(id);
     if (elem) {
       elem.scrollIntoView({ behavior: 'smooth' });
     }
+  }, []);
+
+  const handleSelectVerse = useCallback((index) => {
+    if (index === activeVerseIndex) return;
+    setIsFading(true);
+    const timeout = setTimeout(() => {
+      setActiveVerseIndex(index);
+      setIsFading(false);
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [activeVerseIndex]);
+
+  // 5-Second Auto-Rotation Loop
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsFading(true);
+      setTimeout(() => {
+        setActiveVerseIndex((prevIndex) => (prevIndex + 1) % BLESSING_VERSES.length);
+        setIsFading(false);
+      }, 350);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -85,11 +146,38 @@ export const FooterSection = memo(function FooterSection() {
           {/* Col 4: Daily Blessing */}
           <aside className="footer-nav-col footer-blessing-column" aria-label="Daily Scripture Blessing">
             <h4 className="footer-title">Daily Blessing</h4>
-            <div className="footer-scripture-glass-card">
-              <p className="blessing-scripture-text">
-                “The grace of the Lord Jesus Christ and the love of God and the fellowship of the Holy Spirit be with you all.”
-              </p>
-              <span className="blessing-citation">2 Corinthians 13:14</span>
+            <div 
+              className="footer-scripture-glass-card" 
+              aria-live="polite" 
+              aria-atomic="true"
+            >
+              <div className={`blessing-verse-container ${isFading ? 'blessing-fade-out' : 'blessing-fade-in'}`}>
+                <p className="blessing-scripture-text">
+                  {BLESSING_VERSES[activeVerseIndex].verse}
+                </p>
+                <span className="blessing-citation">
+                  {BLESSING_VERSES[activeVerseIndex].reference}
+                </span>
+              </div>
+
+              {/* Progress Indicator Dots */}
+              <div 
+                className="blessing-pagination-dots" 
+                role="tablist" 
+                aria-label="Daily Blessing Scripture Selection"
+              >
+                {BLESSING_VERSES.map((item, idx) => (
+                  <button
+                    key={item.reference}
+                    type="button"
+                    role="tab"
+                    aria-selected={idx === activeVerseIndex}
+                    aria-label={`Blessing ${idx + 1}: ${item.reference}`}
+                    className={`blessing-dot ${idx === activeVerseIndex ? 'blessing-dot-active' : ''}`}
+                    onClick={() => handleSelectVerse(idx)}
+                  />
+                ))}
+              </div>
             </div>
           </aside>
         </div>

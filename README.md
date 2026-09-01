@@ -43,24 +43,28 @@ GraceGrid Frontend (React 19 + Vite)
 
 ---
 
-## 📧 Brevo Email & Development Phase Updates
+## 📧 Email Automation System (Brevo + Supabase)
 
-GraceGrid integrates seamlessly with **Brevo (formerly Sendinblue)** across two key workflows:
+GraceGrid includes 3 fully automated, end-to-end email workflows:
 
-### 1. Automated Welcome Email & Contact List Sync
-When a new believer joins the waitlist:
-1. **Database Storage**: The user is securely added to the PostgreSQL `public.waitlist` table.
-2. **Brevo Contact Sync**: The user is added to your Brevo Contact List (set by `BREVO_LIST_ID`) with custom attributes:
-   * `FIRSTNAME` — First name for personalized greetings
-   * `FULLNAME` — Full registered name
-   * `ROLE` — Believer, Pastor/Minister, Group Leader, or Student
-   * `DEV_PHASE` — Current development phase (`Phase 1: Pre-Launch Sanctuary`)
-   * `INVITE_LINK` — Personal referral link
-3. **Automated Welcome Email**: Dispatched instantly via Brevo's Transactional Email API (`/v3/smtp/email`). If `BREVO_TEMPLATE_ID` is set, it uses your Brevo template; otherwise, it sends an embedded cinematic HTML email automatically!
+### 1. 🕊️ Subscriber Welcome Email (Automatic on Signup)
+When a believer joins the waitlist on the public landing page:
+1. **PostgreSQL Insert**: Record saved into `public.waitlist`.
+2. **Brevo Contact Sync**: Added to Brevo contact list with attributes (`FIRSTNAME`, `FULLNAME`, `ROLE`, `DEV_PHASE`, `INVITE_LINK`).
+3. **Personalized Welcome Email**: Dispatched instantly via Brevo (`/v3/smtp/email`) with Christian greeting, assigned role confirmation, launch cohort progress info, and fellowship referral invite link.
 
-### 2. Real-Time Waitlist Progress
-* **Live Target Counter**: As users join, Supabase Realtime channels and secure `get_waitlist_count()` RPC update the progress bar towards the cohort target (e.g. 50 believers).
-* **Live Activity Feed**: Displays real-time first names of newly joined believers with relative timestamps.
+### 2. 🔔 Admin Instant Signup Notification (Automatic on Signup)
+Simultaneously when a new user registers:
+1. An automated notification alert email is dispatched to the administrator (`ADMIN_ALERT_EMAIL`).
+2. Details include: Subscriber Full Name, Email, Community Role, Live Cohort Progress (`X / 50 Believers`), and a direct 1-click button to open the **Admin Dashboard**.
+
+### 3. 📢 Project Development Phase Broadcasts
+When the team reaches a new milestone (e.g. *Phase 2: Closed Alpha*):
+1. **Interactive Admin Composer**: Compose update subject, headline, progress message, and accomplishment highlights in `/gracegrid-admin/dashboard` under the *Pass Phase Updates* tab.
+2. **Target Segmentation**: Broadcast to *All Subscribers*, *Believers*, *Pastors*, *Group Leaders*, or *Students*.
+3. **Test Preview**: Send an instant test preview to the admin inbox before broadcasting.
+4. **Mass Delivery**: Batched dispatch via Supabase Edge Function `send-phase-update` and Brevo API.
+
 
 ### 3. Broadcasting Project Development Phase Updates
 You can send development phase updates to your waitlist subscribers in two ways:

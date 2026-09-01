@@ -29,9 +29,9 @@ export const supabase = createClient(
   rawAnonKey || 'placeholder-anon-key',
   {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
   }
 );

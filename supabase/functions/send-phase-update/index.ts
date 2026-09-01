@@ -132,7 +132,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: 'BREVO_API_KEY environment variable is not configured.' }, 500);
     }
 
-    const brevoSenderEmail = Deno.env.get('BREVO_SENDER_EMAIL') || 'updates@gracegrid.app';
+    const brevoSenderEmail = Deno.env.get('BREVO_SENDER_EMAIL') || Deno.env.get('ADMIN_ALERT_EMAIL') || Deno.env.get('ADMIN_EMAIL') || 'gracegrid4@gmail.com';
     const brevoSenderName = Deno.env.get('BREVO_SENDER_NAME') || 'GraceGrid Sanctuary Updates';
 
     // 2. Parse Request Payload

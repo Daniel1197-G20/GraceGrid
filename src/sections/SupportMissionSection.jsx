@@ -20,10 +20,10 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.15 });
 
   const bankDetails = {
-    bankName: 'Guaranty Trust Bank (GTBank)',
-    accountName: 'GraceGrid Digital Sanctuary Ltd',
-    accountNumber: '0123456789',
-    formattedAccountNumber: '0123 456 789',
+    bankName: 'PalmPay',
+    accountName: 'PRAISE VICTOR EGBAUNU',
+    accountNumber: '7084027105',
+    formattedAccountNumber: '7084 027 105',
   };
 
   const handleCopyAccountNumber = useCallback(() => {

@@ -11,3 +11,6 @@ port = 54322
 
 [functions.join-waitlist]
 verify_jwt = false
+
+[functions.send-phase-update]
+verify_jwt = false

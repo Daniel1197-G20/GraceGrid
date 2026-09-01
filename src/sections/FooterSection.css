@@ -105,8 +105,29 @@
   padding: 1.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  justify-content: space-between;
+  min-height: 165px;
+  gap: 0.85rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.blessing-verse-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: opacity 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.blessing-verse-container.blessing-fade-out {
+  opacity: 0;
+}
+
+.blessing-verse-container.blessing-fade-in {
+  opacity: 1;
 }
 
 .blessing-scripture-text {
@@ -115,6 +136,7 @@
   font-size: 0.875rem;
   line-height: 1.55;
   color: #FFFFFF;
+  margin: 0;
 }
 
 .blessing-citation {
@@ -122,6 +144,50 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--accent-gold);
+  letter-spacing: 0.03em;
+}
+
+.blessing-pagination-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.blessing-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              background 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blessing-dot:hover:not(.blessing-dot-active) {
+  background: rgba(212, 175, 55, 0.55);
+}
+
+.blessing-dot:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.blessing-dot-active {
+  width: 18px;
+  background: linear-gradient(90deg, #16A34A 0%, #D4AF37 100%);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blessing-verse-container,
+  .blessing-dot {
+    transition: none !important;
+  }
 }
 
 .footer-legal-bar {
