@@ -340,10 +340,108 @@
   font-size: 0.875rem;
 }
 
-/* Primary Action Button (Without Paystack label) */
+/* Donor Fields Section (Email & Name for Paystack receipt) */
+.donor-fields-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.donor-fields-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .donor-fields-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+}
+
+.donor-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.donor-field-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.req-star {
+  color: #DC2626;
+  font-weight: 700;
+}
+
+.opt-tag {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.775rem;
+}
+
+.donor-input-container {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(22, 163, 74, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0 0.85rem;
+  height: 46px;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.donor-input-container:focus-within {
+  border-color: #16A34A;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+.donor-input-has-error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.donor-field-icon {
+  color: #15803D;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.donor-text-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 0.925rem;
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+.donor-text-input::placeholder {
+  color: var(--text-muted);
+  font-size: 0.825rem;
+}
+
+.donor-error-hint {
+  font-size: 0.775rem;
+  color: #DC2626;
+  font-weight: 500;
+  margin-top: 0.15rem;
+}
+
+/* Primary Action Button */
 .giving-action-wrapper {
   display: flex;
   flex-direction: column;
+  gap: 0.65rem;
 }
 
 .btn-give-primary {
@@ -366,15 +464,30 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.btn-give-primary:hover {
+.btn-give-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #166534 0%, #15803D 100%);
   box-shadow: 0 12px 30px rgba(22, 163, 74, 0.45);
   transform: translateY(-2px);
   color: #FFFFFF !important;
 }
 
-.btn-give-primary:active {
+.btn-give-primary:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.btn-giving-loading {
+  opacity: 0.88;
+  cursor: wait !important;
+}
+
+.btn-giving-spinner {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .btn-heart-give {
@@ -383,9 +496,121 @@
   flex-shrink: 0;
 }
 
-.btn-ext-icon {
+.btn-lock-icon {
   opacity: 0.85;
   flex-shrink: 0;
+}
+
+.giving-instant-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.775rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Giving Celebratory Success Card */
+.giving-success-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  gap: 1rem;
+}
+
+.giving-success-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #22C55E;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.25);
+}
+
+.success-badge-icon {
+  color: #16A34A;
+}
+
+.giving-success-title {
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #14532D;
+  line-height: 1.25;
+}
+
+.giving-success-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 480px;
+}
+
+.giving-receipt-box {
+  width: 100%;
+  max-width: 440px;
+  background: #FFFFFF;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.825rem;
+}
+
+.receipt-k {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.receipt-v {
+  font-family: monospace;
+  font-weight: 700;
+  color: #15803D;
+  word-break: break-all;
+}
+
+.giving-receipt-tip {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.btn-give-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #F0FDF4;
+  border: 1.5px solid #16A34A;
+  color: #15803D;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.btn-give-again:hover {
+  background: #DCFCE7;
+  color: #14532D;
+  transform: translateY(-1px);
 }
 
 /* Payment Channels Row */

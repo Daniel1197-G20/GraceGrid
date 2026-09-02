@@ -13,8 +13,12 @@ import {
   Building2, 
   Zap, 
   Lock,
-  CheckCircle2
+  CheckCircle2,
+  Mail,
+  User,
+  Loader2
 } from 'lucide-react';
+import { openPaystackInlineCheckout } from '../services/paystack';
 import './SupportMissionSection.css';
 
 // Campaign Milestones (No attached amounts)
@@ -45,6 +49,25 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
   const [selectedAmount, setSelectedAmount] = useState(5000);
   const [customAmount, setCustomAmount] = useState('');
 
+  // Donor contact state (auto-prefilled from waitlist if user previously joined)
+  const [donorEmail, setDonorEmail] = useState(() => {
+    try {
+      return localStorage.getItem('gracegrid_user_email') || '';
+    } catch (_) {
+      return '';
+    }
+  });
+  const [donorName, setDonorName] = useState(() => {
+    try {
+      return localStorage.getItem('gracegrid_user_name') || '';
+    } catch (_) {
+      return '';
+    }
+  });
+  const [emailError, setEmailError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(null);
+
   // Currency Formatter Helper
   const formatNaira = useCallback((val) => {
     return '₦' + Number(val).toLocaleString('en-NG');
@@ -52,7 +75,8 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
 
   const effectiveAmount = customAmount !== '' ? Number(customAmount) : selectedAmount;
 
-  // Payment gateway URL (Paystack powered, without exposing processor branding)
+  // Paystack Public Key for inline modal & fallback payment URL
+  const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
   const paystackUrl = import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid';
 
   const handleSelectPreset = (amount) => {
@@ -68,21 +92,112 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
     }
   };
 
-  const handleGiveSubmit = useCallback(() => {
-    if (onShowToast) {
-      const displayAmount = effectiveAmount && effectiveAmount > 0 ? formatNaira(effectiveAmount) : '';
-      onShowToast(`Proceeding to secure checkout${displayAmount ? ` for ${displayAmount}` : ''}...`, 'info');
+  const validateDonorEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
+  const handleGiveSubmit = useCallback(async () => {
+    if (!effectiveAmount || isNaN(effectiveAmount) || effectiveAmount <= 0) {
+      if (onShowToast) onShowToast('Please select or enter a donation amount.', 'error');
+      return;
     }
 
-    // Build URL with optional amount parameter
-    let targetUrl = paystackUrl;
-    if (effectiveAmount && effectiveAmount > 0) {
+    if (!donorEmail.trim()) {
+      setEmailError('Please enter your email address for your payment receipt.');
+      if (onShowToast) onShowToast('Please provide your email address for your payment receipt.', 'info');
+      const inputEl = document.getElementById('donor-giving-email');
+      if (inputEl) inputEl.focus();
+      return;
+    }
+
+    if (!validateDonorEmail(donorEmail)) {
+      setEmailError('Please provide a valid email address (e.g., name@domain.com).');
+      if (onShowToast) onShowToast('Please provide a valid email address.', 'error');
+      const inputEl = document.getElementById('donor-giving-email');
+      if (inputEl) inputEl.focus();
+      return;
+    }
+
+    setEmailError('');
+
+    // Persist for subsequent visits
+    try {
+      localStorage.setItem('gracegrid_user_email', donorEmail.trim());
+      if (donorName.trim()) {
+        localStorage.setItem('gracegrid_user_name', donorName.trim());
+      }
+    } catch (_) {}
+
+    // 1. In-App Paystack Inline Modal (if public key is configured)
+    if (paystackPublicKey && paystackPublicKey.trim() !== '') {
+      setIsProcessing(true);
+      if (onShowToast) {
+        onShowToast(`Opening secure checkout for ${formatNaira(effectiveAmount)}...`, 'info');
+      }
+
+      try {
+        await openPaystackInlineCheckout({
+          publicKey: paystackPublicKey.trim(),
+          email: donorEmail.trim(),
+          amount: effectiveAmount,
+          donorName: donorName.trim(),
+          onSuccess: (response) => {
+            setIsProcessing(false);
+            setPaymentSuccess({
+              reference: response.reference,
+              amount: effectiveAmount,
+              email: donorEmail.trim(),
+              donorName: donorName.trim(),
+            });
+
+            // Trigger mobile-safe celebratory confetti
+            const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!isReduced) {
+              import('canvas-confetti').then((confettiModule) => {
+                const confettiFn = confettiModule.default || confettiModule;
+                const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+                confettiFn({
+                  particleCount: isMobile ? 40 : 80,
+                  spread: isMobile ? 60 : 85,
+                  origin: { y: 0.6 },
+                  colors: ['#16A34A', '#22C55E', '#D4AF37', '#FEF08A', '#052E16']
+                });
+              }).catch(() => {});
+            }
+
+            if (onShowToast) {
+              onShowToast(`Blessings! Your seed of ${formatNaira(effectiveAmount)} was received. Reference: ${response.reference}`, 'success');
+            }
+          },
+          onClose: () => {
+            setIsProcessing(false);
+            if (onShowToast) {
+              onShowToast('Giving session closed. You can complete your seed anytime.', 'info');
+            }
+          },
+        });
+      } catch (err) {
+        setIsProcessing(false);
+        console.error('Paystack Inline checkout error:', err);
+        if (onShowToast) {
+          onShowToast(`Notice: ${err.message}. Opening payment checkout page...`, 'error');
+        }
+        // Fallback to URL
+        const sep = paystackUrl.includes('?') ? '&' : '?';
+        const fallbackUrl = `${paystackUrl}${sep}amount=${effectiveAmount * 100}&email=${encodeURIComponent(donorEmail.trim())}`;
+        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+      }
+    } else {
+      // 2. Fallback to Paystack Hosted Payment Page
+      if (onShowToast) {
+        onShowToast(`Opening checkout for ${formatNaira(effectiveAmount)}... (Tip: Add VITE_PAYSTACK_PUBLIC_KEY in .env for in-app popup modal)`, 'info');
+      }
       const sep = paystackUrl.includes('?') ? '&' : '?';
-      targetUrl = `${paystackUrl}${sep}amount=${effectiveAmount * 100}`;
+      const targetUrl = `${paystackUrl}${sep}amount=${effectiveAmount * 100}&email=${encodeURIComponent(donorEmail.trim())}`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
-
-    window.open(targetUrl, '_blank', 'noopener,noreferrer');
-  }, [paystackUrl, effectiveAmount, formatNaira, onShowToast]);
+  }, [effectiveAmount, donorEmail, donorName, paystackPublicKey, paystackUrl, formatNaira, onShowToast]);
 
   const buttonLabel = effectiveAmount && !isNaN(effectiveAmount) && effectiveAmount > 0
     ? `Support GraceGrid (${formatNaira(effectiveAmount)})`
@@ -153,83 +268,180 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
 
           {/* Normal App Giving Box */}
           <div className="giving-checkout-box" role="region" aria-label="Make a Donation">
-            <div className="giving-box-header">
-              <div className="giving-header-lead">
-                <Heart size={18} className="heart-icon-green" aria-hidden="true" />
-                <span className="giving-header-title">Choose Your Seed Amount</span>
+            {paymentSuccess ? (
+              <div className="giving-success-card animate-fade-in" role="alert">
+                <div className="giving-success-badge">
+                  <CheckCircle2 size={44} className="success-badge-icon" aria-hidden="true" />
+                </div>
+                <h3 className="giving-success-title">Thank You For Sowing Into GraceGrid!</h3>
+                <p className="giving-success-desc">
+                  Your seed of <strong>{formatNaira(paymentSuccess.amount)}</strong> has been received with deep gratitude and dedicated directly towards our technical launch milestones.
+                </p>
+                <div className="giving-receipt-box">
+                  <div className="receipt-row">
+                    <span className="receipt-k">Transaction Ref:</span>
+                    <span className="receipt-v">{paymentSuccess.reference}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="receipt-k">Receipt Sent To:</span>
+                    <span className="receipt-v">{paymentSuccess.email}</span>
+                  </div>
+                </div>
+                <p className="giving-receipt-tip">
+                  A comprehensive payment receipt has been dispatched to your email by Paystack.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSuccess(null)}
+                  className="btn-give-again"
+                >
+                  <Heart size={16} aria-hidden="true" />
+                  <span>Sow Another Seed</span>
+                </button>
               </div>
-              <span className="giving-secure-tag">
-                <Lock size={12} aria-hidden="true" /> 256-Bit SSL Encrypted
-              </span>
-            </div>
+            ) : (
+              <>
+                <div className="giving-box-header">
+                  <div className="giving-header-lead">
+                    <Heart size={18} className="heart-icon-green" aria-hidden="true" />
+                    <span className="giving-header-title">Choose Your Seed Amount</span>
+                  </div>
+                  <span className="giving-secure-tag">
+                    <Lock size={12} aria-hidden="true" /> 256-Bit SSL Encrypted
+                  </span>
+                </div>
 
-            {/* Quick Amount Selector Chips */}
-            <div className="amount-chips-grid" role="group" aria-label="Select giving amount">
-              {PRESET_AMOUNTS.map((amt) => {
-                const isSelected = selectedAmount === amt && customAmount === '';
-                return (
+                {/* Quick Amount Selector Chips */}
+                <div className="amount-chips-grid" role="group" aria-label="Select giving amount">
+                  {PRESET_AMOUNTS.map((amt) => {
+                    const isSelected = selectedAmount === amt && customAmount === '';
+                    return (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => handleSelectPreset(amt)}
+                        className={`amount-chip ${isSelected ? 'amount-chip-active' : ''}`}
+                        aria-pressed={isSelected}
+                      >
+                        {formatNaira(amt)}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Amount Input */}
+                <div className="custom-amount-row">
+                  <label htmlFor="custom-giving-input" className="custom-amount-label">
+                    Or enter custom amount:
+                  </label>
+                  <div className="custom-input-group">
+                    <span className="currency-prefix" aria-hidden="true">₦</span>
+                    <input
+                      id="custom-giving-input"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Other amount (e.g. 15000)"
+                      value={customAmount}
+                      onChange={handleCustomChange}
+                      className="custom-amount-input"
+                      aria-label="Enter custom giving amount in Naira"
+                    />
+                  </div>
+                </div>
+
+                {/* Donor Details for Receipt & In-App Checkout */}
+                <div className="donor-fields-section">
+                  <div className="donor-fields-grid">
+                    <div className="donor-field-item">
+                      <label htmlFor="donor-giving-email" className="donor-field-label">
+                        Email Address <span className="req-star">*</span>
+                      </label>
+                      <div className={`donor-input-container ${emailError ? 'donor-input-has-error' : ''}`}>
+                        <Mail size={16} className="donor-field-icon" aria-hidden="true" />
+                        <input
+                          id="donor-giving-email"
+                          type="email"
+                          autoComplete="email"
+                          placeholder="your.email@example.com (for receipt)"
+                          value={donorEmail}
+                          onChange={(e) => {
+                            setDonorEmail(e.target.value);
+                            if (emailError) setEmailError('');
+                          }}
+                          className="donor-text-input"
+                          aria-required="true"
+                          aria-invalid={!!emailError}
+                        />
+                      </div>
+                      {emailError && <span className="donor-error-hint">{emailError}</span>}
+                    </div>
+
+                    <div className="donor-field-item">
+                      <label htmlFor="donor-giving-name" className="donor-field-label">
+                        Your Name <span className="opt-tag">(Optional)</span>
+                      </label>
+                      <div className="donor-input-container">
+                        <User size={16} className="donor-field-icon" aria-hidden="true" />
+                        <input
+                          id="donor-giving-name"
+                          type="text"
+                          autoComplete="name"
+                          placeholder="Your name or anonymous"
+                          value={donorName}
+                          onChange={(e) => setDonorName(e.target.value)}
+                          className="donor-text-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Primary Action Button */}
+                <div className="giving-action-wrapper">
                   <button
-                    key={amt}
                     type="button"
-                    onClick={() => handleSelectPreset(amt)}
-                    className={`amount-chip ${isSelected ? 'amount-chip-active' : ''}`}
-                    aria-pressed={isSelected}
+                    onClick={handleGiveSubmit}
+                    disabled={isProcessing}
+                    className={`btn-give-primary ${isProcessing ? 'btn-giving-loading' : ''}`}
+                    aria-label={buttonLabel}
                   >
-                    {formatNaira(amt)}
+                    {isProcessing ? (
+                      <>
+                        <Loader2 size={18} className="btn-giving-spinner" aria-hidden="true" />
+                        <span>Opening Secure Checkout...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Heart size={18} className="btn-heart-give" aria-hidden="true" />
+                        <span>{buttonLabel}</span>
+                        <Lock size={16} className="btn-lock-icon" aria-hidden="true" />
+                      </>
+                    )}
                   </button>
-                );
-              })}
-            </div>
 
-            {/* Custom Amount Input */}
-            <div className="custom-amount-row">
-              <label htmlFor="custom-giving-input" className="custom-amount-label">
-                Or enter custom amount:
-              </label>
-              <div className="custom-input-group">
-                <span className="currency-prefix" aria-hidden="true">₦</span>
-                <input
-                  id="custom-giving-input"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Other amount (e.g. 15000)"
-                  value={customAmount}
-                  onChange={handleCustomChange}
-                  className="custom-amount-input"
-                  aria-label="Enter custom giving amount in Naira"
-                />
-              </div>
-            </div>
+                  <p className="giving-instant-caption">
+                    <Lock size={12} aria-hidden="true" />
+                    <span>In-app checkout opens directly on this page via Paystack — Card, Bank Transfer, USSD & Apple Pay accepted.</span>
+                  </p>
+                </div>
 
-            {/* Primary Action Button (Without Paystack label) */}
-            <div className="giving-action-wrapper">
-              <button
-                type="button"
-                onClick={handleGiveSubmit}
-                className="btn-give-primary"
-                aria-label={buttonLabel}
-              >
-                <Heart size={18} className="btn-heart-give" aria-hidden="true" />
-                <span>{buttonLabel}</span>
-                <ExternalLink size={16} className="btn-ext-icon" aria-hidden="true" />
-              </button>
-            </div>
-
-            {/* Supported Payment Channels */}
-            <div className="payment-channels-row" aria-label="Accepted payment methods">
-              <span className="channel-pill">
-                <CreditCard size={13} aria-hidden="true" /> Debit / Credit Cards
-              </span>
-              <span className="channel-pill">
-                <Building2 size={13} aria-hidden="true" /> Direct Bank Transfer
-              </span>
-              <span className="channel-pill">
-                <Zap size={13} aria-hidden="true" /> USSD &bull; Apple Pay
-              </span>
-              <span className="channel-pill">
-                <ShieldCheck size={13} aria-hidden="true" /> PCI-DSS Certified
-              </span>
-            </div>
+                {/* Supported Payment Channels */}
+                <div className="payment-channels-row" aria-label="Accepted payment methods">
+                  <span className="channel-pill">
+                    <CreditCard size={13} aria-hidden="true" /> Debit / Credit Cards
+                  </span>
+                  <span className="channel-pill">
+                    <Building2 size={13} aria-hidden="true" /> Direct Bank Transfer
+                  </span>
+                  <span className="channel-pill">
+                    <Zap size={13} aria-hidden="true" /> USSD &bull; Apple Pay
+                  </span>
+                  <span className="channel-pill">
+                    <ShieldCheck size={13} aria-hidden="true" /> PCI-DSS Certified
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Transparency: What your support funds (Without price tags) */}

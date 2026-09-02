@@ -98,6 +98,11 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
     setIsSubmitting(true);
     setGeneralError('');
 
+    try {
+      localStorage.setItem('gracegrid_user_email', targetEmail);
+      localStorage.setItem('gracegrid_user_name', targetName);
+    } catch (_) {}
+
     // Trigger mobile-safe celebratory confetti
     const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!isReduced) {
