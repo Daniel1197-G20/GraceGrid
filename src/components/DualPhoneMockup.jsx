@@ -127,7 +127,17 @@ export const DualPhoneMockup = memo(function DualPhoneMockup() {
                 {/* Live Interactive Action */}
                 <div className="stream-bottom-action">
                   <Tooltip content="Send an encouraging Amen to the stream" position="top">
-                    <div className="stream-amen-btn" role="button" tabIndex={0}>
+                    <div 
+                      className="stream-amen-btn" 
+                      role="button" 
+                      tabIndex={0}
+                      aria-label="Send Amen to the stream"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
                       <Heart size={14} fill="#EF4444" color="#EF4444" />
                       <span>Send Amen (1.8k)</span>
                     </div>
@@ -171,7 +181,7 @@ export const DualPhoneMockup = memo(function DualPhoneMockup() {
                   <div className="prayer-card-header">
                     <div className="prayer-user-info">
                       <img 
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" 
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=52&auto=format&fit=crop&q=75&fm=webp" 
                         alt="Elena Rostova" 
                         className="prayer-avatar-img"
                         loading="lazy"

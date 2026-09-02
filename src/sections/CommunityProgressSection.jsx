@@ -199,7 +199,10 @@ export const CommunityProgressSection = memo(function CommunityProgressSection()
                   </span>
                 </div>
               ) : (
-                <div className="ticker-scroll-track animate-ticker-loop">
+                <div 
+                  className="ticker-scroll-track animate-ticker-loop"
+                  style={{ animationPlayState: isVisible ? 'running' : 'paused' }}
+                >
                   {/* First set of activities */}
                   {activities.map((item) => (
                     <div key={`primary-${item.id}`} className="ticker-item-card">

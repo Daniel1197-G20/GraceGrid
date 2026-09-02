@@ -151,6 +151,24 @@ export async function joinWaitlist({ fullName, email, role = 'believer' }) {
   }
 }
 
+// In-memory cache with TTL (60s) for low-end device performance & poor networks
+const CACHE_TTL_MS = 60 * 1000;
+let cachedCount = null;
+let cachedCountTime = 0;
+let cachedActivity = null;
+let cachedActivityTime = 0;
+
+/**
+ * Update cached waitlist count optimistically
+ */
+export function setOptimisticWaitlistCount(newCount) {
+  cachedCount = newCount;
+  cachedCountTime = Date.now();
+  try {
+    sessionStorage.setItem('gg_waitlist_count', JSON.stringify({ count: newCount, time: cachedCountTime }));
+  } catch (_) {}
+}
+
 /**
  * Helper to format relative timestamps
  */
@@ -170,12 +188,32 @@ function formatRelativeTime(dateString) {
 }
 
 /**
- * Fetch total waitlist count dynamically from Supabase PostgreSQL.
- * Returns the real database count (or 0 if empty / offline).
+ * Fetch total waitlist count dynamically from Supabase PostgreSQL with caching.
+ * Returns the real database count (or cached value).
  *
  * @returns {Promise<number>}
  */
 export async function getWaitlistCount() {
+  const now = Date.now();
+
+  // 1. Check in-memory cache
+  if (cachedCount !== null && now - cachedCountTime < CACHE_TTL_MS) {
+    return cachedCount;
+  }
+
+  // 2. Check sessionStorage fallback
+  try {
+    const stored = sessionStorage.getItem('gg_waitlist_count');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed.count === 'number' && now - parsed.time < CACHE_TTL_MS) {
+        cachedCount = parsed.count;
+        cachedCountTime = parsed.time;
+        return cachedCount;
+      }
+    }
+  } catch (_) {}
+
   if (!isSupabaseConfigured) {
     return 0;
   }
@@ -184,6 +222,7 @@ export async function getWaitlistCount() {
     // 1. Try secure RPC function
     const { data: rpcCount, error: rpcError } = await supabase.rpc('get_waitlist_count');
     if (!rpcError && typeof rpcCount === 'number') {
+      setOptimisticWaitlistCount(rpcCount);
       return rpcCount;
     }
 
@@ -193,22 +232,30 @@ export async function getWaitlistCount() {
       .select('*', { count: 'exact', head: true });
 
     if (!countError && typeof count === 'number') {
+      setOptimisticWaitlistCount(count);
       return count;
     }
   } catch (err) {
-    console.warn('[GraceGrid Waitlist] Unable to fetch count, falling back to 0:', err);
+    console.warn('[GraceGrid Waitlist] Unable to fetch count, falling back to cached or 0:', err);
   }
 
-  return 0;
+  return cachedCount !== null ? cachedCount : 0;
 }
 
 /**
- * Fetch recent waitlist signups (first names and relative timestamps) from Supabase PostgreSQL.
+ * Fetch recent waitlist signups (first names and relative timestamps) from Supabase PostgreSQL with caching.
  *
  * @param {number} [limit=10]
  * @returns {Promise<Array<{ id: string, name: string, city: string, time: string }>>}
  */
 export async function getRecentWaitlistActivity(limit = 10) {
+  const now = Date.now();
+
+  // Check in-memory cache
+  if (cachedActivity !== null && now - cachedActivityTime < CACHE_TTL_MS) {
+    return cachedActivity;
+  }
+
   if (!isSupabaseConfigured) {
     return [];
   }
@@ -219,18 +266,21 @@ export async function getRecentWaitlistActivity(limit = 10) {
     });
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      return data.map((item) => ({
+      const formatted = data.map((item) => ({
         id: item.id,
         name: item.first_name || 'Believer',
         city: 'GraceGrid Sanctuary',
         time: formatRelativeTime(item.created_at),
       }));
+      cachedActivity = formatted;
+      cachedActivityTime = now;
+      return formatted;
     }
   } catch (err) {
     console.warn('[GraceGrid Activity] Unable to fetch recent activity:', err);
   }
 
-  return [];
+  return cachedActivity || [];
 }
 
 /**
@@ -241,6 +291,10 @@ export async function getRecentWaitlistActivity(limit = 10) {
  */
 export function subscribeToWaitlistUpdates(onNewMember) {
   const handleLocalJoined = (event) => {
+    // Invalidate/increment cached count immediately
+    if (cachedCount !== null) {
+      setOptimisticWaitlistCount(cachedCount + 1);
+    }
     if (onNewMember) {
       onNewMember(event.detail);
     }
@@ -259,6 +313,10 @@ export function subscribeToWaitlistUpdates(onNewMember) {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'waitlist' },
           (payload) => {
+            // Invalidate count cache on external insert
+            if (cachedCount !== null) {
+              setOptimisticWaitlistCount(cachedCount + 1);
+            }
             if (onNewMember) {
               onNewMember(payload.new);
             }

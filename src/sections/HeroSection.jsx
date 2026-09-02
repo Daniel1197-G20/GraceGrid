@@ -33,7 +33,12 @@ export const HeroSection = memo(function HeroSection() {
       {/* Full-width Cinematic Nature Wallpaper Media */}
       <div className="hero-wallpaper-media" aria-hidden="true">
         <img 
-          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920&auto=format&fit=crop&q=80" 
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&auto=format&fit=crop&q=80&fm=webp" 
+          srcSet="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=480&auto=format&fit=crop&q=75&fm=webp 480w,
+                  https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=75&fm=webp 800w,
+                  https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1400&auto=format&fit=crop&q=80&fm=webp 1400w,
+                  https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1920&auto=format&fit=crop&q=80&fm=webp 1920w"
+          sizes="100vw"
           alt="Sunrise over majestic mountains with morning mist" 
           className="hero-wallpaper-img"
           fetchPriority="high"
@@ -100,7 +105,7 @@ export const HeroSection = memo(function HeroSection() {
           <div className="hero-social-proof">
             <div className="proof-avatars" aria-hidden="true">
               <img 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" 
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=68&auto=format&fit=crop&q=75&fm=webp" 
                 alt="Believer member" 
                 width="34"
                 height="34"
@@ -108,7 +113,7 @@ export const HeroSection = memo(function HeroSection() {
                 decoding="async"
               />
               <img 
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" 
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=68&auto=format&fit=crop&q=75&fm=webp" 
                 alt="Believer member" 
                 width="34"
                 height="34"
@@ -116,7 +121,7 @@ export const HeroSection = memo(function HeroSection() {
                 decoding="async"
               />
               <img 
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" 
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=68&auto=format&fit=crop&q=75&fm=webp" 
                 alt="Believer member" 
                 width="34"
                 height="34"

@@ -1,12 +1,13 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import { AdminAuthProvider, AdminProtectedRoute } from './context/AdminAuthContext';
 import './styles/global.css';
 
-// Lazy load admin pages for optimal bundle separation
+// Lazy load admin context and pages for optimal bundle separation
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminAuthProvider = lazy(() => import('./context/AdminAuthContext').then(m => ({ default: m.AdminAuthProvider })));
+const AdminProtectedRoute = lazy(() => import('./context/AdminAuthContext').then(m => ({ default: m.AdminProtectedRoute })));
 
 function AdminLoadingFallback() {
   return (
@@ -28,37 +29,39 @@ function AdminLoadingFallback() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AdminAuthProvider>
-        <Routes>
-          {/* Public GraceGrid Landing Page */}
-          <Route path="/" element={<LandingPage />} />
+      <Routes>
+        {/* Public GraceGrid Landing Page (Zero Admin Overhead) */}
+        <Route path="/" element={<LandingPage />} />
 
-          {/* Admin Portal Authentication */}
-          <Route 
-            path="/gracegrid-admin" 
-            element={
-              <Suspense fallback={<AdminLoadingFallback />}>
+        {/* Admin Portal Authentication */}
+        <Route 
+          path="/gracegrid-admin" 
+          element={
+            <Suspense fallback={<AdminLoadingFallback />}>
+              <AdminAuthProvider>
                 <AdminLogin />
-              </Suspense>
-            } 
-          />
+              </AdminAuthProvider>
+            </Suspense>
+          } 
+        />
 
-          {/* Protected Admin Control Center */}
-          <Route 
-            path="/gracegrid-admin/dashboard" 
-            element={
-              <AdminProtectedRoute>
-                <Suspense fallback={<AdminLoadingFallback />}>
+        {/* Protected Admin Control Center */}
+        <Route 
+          path="/gracegrid-admin/dashboard" 
+          element={
+            <Suspense fallback={<AdminLoadingFallback />}>
+              <AdminAuthProvider>
+                <AdminProtectedRoute>
                   <AdminDashboard />
-                </Suspense>
-              </AdminProtectedRoute>
-            } 
-          />
+                </AdminProtectedRoute>
+              </AdminAuthProvider>
+            </Suspense>
+          } 
+        />
 
-          {/* Catch-all: Redirect unknown routes to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AdminAuthProvider>
+        {/* Catch-all: Redirect unknown routes to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }

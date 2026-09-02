@@ -13,11 +13,37 @@
     <meta property="og:description" content="A luxurious, peaceful, cinematic Christian social platform. Connect through live worship, prayer requests, Scripture, and genuine fellowship." />
     
     <title>GraceGrid — Faith. Fellowship. Feed. | A Christian Social Platform</title>
-    
-    <!-- Google Fonts: Plus Jakarta Sans (Headings/UI), Inter (Body), Newsreader (Scripture), Playfair Display (Editorial), Caveat & Alex Brush (Cinematic Handwritten Script) -->
+    <link rel="canonical" href="https://gracegrid.app" />
+
+    <!-- Resource Hints -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Playfair+Display:ital,wght@0,600;0,700;1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Preload Critical Hero Image (LCP) in WebP format -->
+    <link 
+      rel="preload" 
+      as="image" 
+      href="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=75&fm=webp" 
+      type="image/webp" 
+      media="(max-width: 768px)" 
+      fetchpriority="high" 
+    />
+    <link 
+      rel="preload" 
+      as="image" 
+      href="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=80&fm=webp" 
+      type="image/webp" 
+      media="(min-width: 769px)" 
+      fetchpriority="high" 
+    />
+
+    <!-- Google Fonts: Plus Jakarta Sans, Inter, Newsreader, Caveat (Non-blocking with swap) -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

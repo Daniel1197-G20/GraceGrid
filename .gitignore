@@ -14,8 +14,11 @@ dist-ssr
 *.local
 .env
 .env.local
+.env.real
 .env.*.local
+.env.*.real
 supabase/.env
+supabase/.env.*
 supabase/.temp/
 !.env.example
 !supabase/.env.example

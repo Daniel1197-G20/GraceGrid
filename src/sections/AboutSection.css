@@ -224,3 +224,11 @@
     height: 460px;
   }
 }
+
+@media (max-width: 768px) {
+  .photo-floating-pill {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(5, 46, 22, 0.96);
+  }
+}

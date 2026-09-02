@@ -276,7 +276,7 @@
   position: relative;
   height: 200px;
   background: linear-gradient(180deg, rgba(5, 46, 22, 0.4) 0%, rgba(3, 20, 11, 0.9) 100%),
-              url('https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=500&auto=format&fit=crop&q=80') center/cover no-repeat;
+              url('https://images.unsplash.com/photo-1519834785169-98be25ec3f84?w=400&auto=format&fit=crop&q=75&fm=webp') center/cover no-repeat;
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -589,6 +589,10 @@
   .dual-mockup-stage {
     min-height: 460px;
   }
+  .dual-mockup-halo {
+    filter: blur(25px);
+    opacity: 0.5;
+  }
   .mockup-phone {
     width: 250px;
   }
@@ -603,6 +607,9 @@
   }
   .floating-badge {
     display: none;
+  }
+  .r1, .r2, .r3 {
+    animation: none !important;
   }
 }
 
@@ -620,5 +627,16 @@
     transform: none;
     margin: 0 auto;
     width: 270px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .r1, .r2, .r3,
+  .live-dot,
+  .floating-pray-heart {
+    animation: none !important;
+  }
+  .mockup-phone {
+    transition: none !important;
   }
 }

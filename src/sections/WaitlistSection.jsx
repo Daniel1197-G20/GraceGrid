@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
-import confetti from 'canvas-confetti';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { LeafPattern, GlowingCrossSilhouette } from '../components/DecorativeAssets';
@@ -88,13 +87,31 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
 
     if (!validateForm()) return;
 
-    setIsSubmitting(true);
-    setGeneralError('');
-
     const targetName = formData.fullName.trim();
     const targetEmail = formData.email.trim();
     const targetRole = formData.role;
     const generatedQueue = Math.floor(5120 + Math.random() * 260);
+
+    // Optimistic UI: Immediately render success state and spot in line
+    setQueueNumber(generatedQueue);
+    setIsSubmitted(true);
+    setIsSubmitting(true);
+    setGeneralError('');
+
+    // Trigger mobile-safe celebratory confetti
+    const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!isReduced) {
+      import('canvas-confetti').then((confettiModule) => {
+        const confettiFn = confettiModule.default || confettiModule;
+        const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+        confettiFn({
+          particleCount: isMobile ? 35 : 80,
+          spread: isMobile ? 55 : 80,
+          origin: { y: 0.6 },
+          colors: ['#16A34A', '#22C55E', '#D4AF37', '#FEF08A', '#052E16']
+        });
+      }).catch(() => {});
+    }
 
     try {
       let result;
@@ -113,18 +130,7 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
         });
       }
 
-      setQueueNumber(generatedQueue);
       setIsSubmitting(false);
-      setIsSubmitted(true);
-
-      try {
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#16A34A', '#22C55E', '#D4AF37', '#FEF08A', '#052E16']
-        });
-      } catch (err) {}
 
       if (onShowToast) {
         onShowToast(
@@ -134,11 +140,19 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
       }
     } catch (err) {
       setIsSubmitting(false);
-      setIsSubmitted(false);
-      const errorMessage = err?.message || 'Something went wrong. Please try again.';
-      setGeneralError(errorMessage);
-      if (onShowToast) {
-        onShowToast(errorMessage, 'error');
+      const errorMessage = err?.message || 'Something went wrong.';
+      
+      // If already on waitlist, remain on confirmation view and notify user
+      if (errorMessage.includes('already on the GraceGrid waitlist')) {
+        if (onShowToast) {
+          onShowToast("You're already on the waitlist! We retrieved your priority spot.", 'info');
+        }
+      } else {
+        setIsSubmitted(false);
+        setGeneralError(errorMessage);
+        if (onShowToast) {
+          onShowToast(errorMessage, 'error');
+        }
       }
     }
   }, [formData, validateForm, onSubmitWaitlist, onShowToast]);
@@ -178,7 +192,12 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
       {/* Background Cinematic Wallpaper: Rolling Green Hills */}
       <div className="waitlist-wallpaper-media" aria-hidden="true">
         <img 
-          src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1920&auto=format&fit=crop&q=80" 
+          src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1200&auto=format&fit=crop&q=80&fm=webp" 
+          srcSet="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=480&auto=format&fit=crop&q=75&fm=webp 480w,
+                  https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&auto=format&fit=crop&q=75&fm=webp 800w,
+                  https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1400&auto=format&fit=crop&q=80&fm=webp 1400w,
+                  https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1920&auto=format&fit=crop&q=80&fm=webp 1920w"
+          sizes="100vw"
           alt="Rolling green hills with morning mist" 
           className="waitlist-wallpaper-img"
           loading="lazy"

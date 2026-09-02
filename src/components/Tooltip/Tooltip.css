@@ -105,10 +105,24 @@
   border-color: transparent rgba(5, 46, 22, 0.92) transparent transparent;
 }
 
+@media (max-width: 768px) {
+  .tooltip-bubble {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #052E16;
+  }
+}
+
 @media (max-width: 600px) {
   .tooltip-bubble {
     white-space: normal;
     width: max-content;
     max-width: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-tooltip-fade {
+    animation: none !important;
   }
 }

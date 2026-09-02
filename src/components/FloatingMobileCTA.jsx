@@ -1,55 +1,61 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import Button from './Button';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import './FloatingMobileCTA.css';
 
 export const FloatingMobileCTA = memo(function FloatingMobileCTA() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isPastHero, setIsPastHero] = useState(false);
+  const [isWaitlistVisible, setIsWaitlistVisible] = useState(false);
 
   useEffect(() => {
-    let ticking = false;
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      setIsPastHero(true);
+      return;
+    }
 
-    const checkVisibility = () => {
-      const scrollY = window.scrollY;
-      const waitlistSection = document.getElementById('waitlist');
-      
-      let isNearWaitlist = false;
-      if (waitlistSection) {
-        const rect = waitlistSection.getBoundingClientRect();
-        // If waitlist is visible on screen, hide floating CTA
-        if (rect.top <= window.innerHeight && rect.bottom >= 0) {
-          isNearWaitlist = true;
-        }
-      }
+    // Observer for Hero leaving viewport
+    const heroEl = document.getElementById('hero');
+    let heroObserver;
+    if (heroEl) {
+      heroObserver = new IntersectionObserver(
+        ([entry]) => {
+          setIsPastHero(!entry.isIntersecting);
+        },
+        { threshold: 0.1, rootMargin: '-80px 0px 0px 0px' }
+      );
+      heroObserver.observe(heroEl);
+    } else {
+      setIsPastHero(true);
+    }
 
-      // Show after user scrolls down 400px, but hide if already at waitlist section
-      if (scrollY > 400 && !isNearWaitlist) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+    // Observer for Waitlist entering viewport
+    const waitlistEl = document.getElementById('waitlist');
+    let waitlistObserver;
+    if (waitlistEl) {
+      waitlistObserver = new IntersectionObserver(
+        ([entry]) => {
+          setIsWaitlistVisible(entry.isIntersecting);
+        },
+        { threshold: 0.05, rootMargin: '100px 0px 0px 0px' }
+      );
+      waitlistObserver.observe(waitlistEl);
+    }
 
-      ticking = false;
+    return () => {
+      if (heroObserver && heroEl) heroObserver.unobserve(heroEl);
+      if (waitlistObserver && waitlistEl) waitlistObserver.unobserve(waitlistEl);
     };
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(checkVisibility);
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleScrollToWaitlist = (e) => {
+  const handleScrollToWaitlist = useCallback((e) => {
     e.preventDefault();
     const waitlist = document.getElementById('waitlist');
     if (waitlist) {
       waitlist.scrollIntoView({ behavior: 'smooth' });
     }
-  };
+  }, []);
+
+  const isVisible = isPastHero && !isWaitlistVisible;
 
   if (!isVisible) return null;
 

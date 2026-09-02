@@ -75,22 +75,31 @@
   height: 8px;
   border-radius: 50%;
   background: #22C55E;
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-  animation: greenPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  position: relative;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.6);
+  animation: greenPulse 2s infinite ease-out;
+  pointer-events: none;
 }
 
 @keyframes greenPulse {
   0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    transform: scale(1);
+    opacity: 0.8;
   }
   70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    transform: scale(2.2);
+    opacity: 0;
   }
   100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    transform: scale(2.2);
+    opacity: 0;
   }
 }
 
@@ -397,6 +406,13 @@
   .community-progress-card {
     padding: 1.5rem;
     gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .progress-fill-shine {
+    display: none;
   }
 
   .progress-bar-container {
@@ -421,5 +437,16 @@
   .ticker-item-card {
     padding: 0.55rem 0.85rem;
     font-size: 0.8125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker-loop,
+  .progress-fill-shine,
+  .pulse-dot::after {
+    animation: none !important;
+  }
+  .progress-fill-bar {
+    transition: none !important;
   }
 }

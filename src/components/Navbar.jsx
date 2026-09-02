@@ -14,7 +14,8 @@ export const Navbar = memo(function Navbar() {
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          setIsScrolled(window.scrollY > 25);
+          const shouldScrolled = window.scrollY > 25;
+          setIsScrolled((prev) => (prev !== shouldScrolled ? shouldScrolled : prev));
           ticking = false;
         });
         ticking = true;

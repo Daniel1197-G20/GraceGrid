@@ -1,30 +1,56 @@
-import React, { useState, lazy, Suspense, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useCallback, useRef, useEffect, memo } from 'react';
 import Navbar from '../components/Navbar';
 import HeroSection from '../sections/HeroSection';
-import CommunityProgressSection from '../sections/CommunityProgressSection';
-import StatsSection from '../sections/StatsSection';
-import SupportMissionSection from '../sections/SupportMissionSection';
-import WaitlistSection from '../sections/WaitlistSection';
 import FloatingMobileCTA from '../components/FloatingMobileCTA';
 import Toast from '../components/Toast';
 import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary';
-import { FeaturesSkeleton } from '../components/Skeleton/FeaturesSkeleton';
-import { AboutSkeleton } from '../components/Skeleton/AboutSkeleton';
+import {
+  FeaturesSkeleton,
+  AboutSkeleton,
+  StatsSkeleton,
+  WaitlistSkeleton,
+  CommunityProgressSkeleton,
+  SupportSkeleton,
+  FooterSkeleton
+} from '../components/Skeleton';
 import './LandingPage.css';
 
-// Lazy load non-critical sections for performance and optimal initial chunk size
+// Lazy load non-critical below-the-fold sections for low-end device performance
+const CommunityProgressSection = lazy(() => import('../sections/CommunityProgressSection'));
+const StatsSection = lazy(() => import('../sections/StatsSection'));
 const FeaturesSection = lazy(() => import('../sections/FeaturesSection'));
 const AboutSection = lazy(() => import('../sections/AboutSection'));
+const SupportMissionSection = lazy(() => import('../sections/SupportMissionSection'));
+const WaitlistSection = lazy(() => import('../sections/WaitlistSection'));
 const FooterSection = lazy(() => import('../sections/FooterSection'));
 
-export default function LandingPage() {
+export const LandingPage = memo(function LandingPage() {
   const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
 
   const showToast = useCallback((message, type = 'success') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToast({ message, type });
-    setTimeout(() => {
+    toastTimeoutRef.current = setTimeout(() => {
       setToast(null);
     }, 4500);
+  }, []);
+
+  const handleCloseToast = useCallback(() => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -39,10 +65,17 @@ export default function LandingPage() {
 
         {/* Live Community Progress and Cohort Goal Target */}
         <ErrorBoundary>
-          <CommunityProgressSection />
+          <Suspense fallback={<CommunityProgressSkeleton />}>
+            <CommunityProgressSection />
+          </Suspense>
         </ErrorBoundary>
 
-        <StatsSection />
+        {/* Stats Metrics Section */}
+        <ErrorBoundary>
+          <Suspense fallback={<StatsSkeleton />}>
+            <StatsSection />
+          </Suspense>
+        </ErrorBoundary>
 
         {/* Lazy Loaded Features Section with Skeleton Fallback and Error Boundary */}
         <ErrorBoundary>
@@ -60,18 +93,22 @@ export default function LandingPage() {
 
         {/* Support the Mission: Direct Bank Transfer Donation */}
         <ErrorBoundary>
-          <SupportMissionSection onShowToast={showToast} />
+          <Suspense fallback={<SupportSkeleton />}>
+            <SupportMissionSection onShowToast={showToast} />
+          </Suspense>
         </ErrorBoundary>
 
         {/* Dedicated Single Waitlist Section: 'Be the First to Know' */}
         <ErrorBoundary>
-          <WaitlistSection onShowToast={showToast} />
+          <Suspense fallback={<WaitlistSkeleton />}>
+            <WaitlistSection onShowToast={showToast} />
+          </Suspense>
         </ErrorBoundary>
       </main>
 
       {/* Lazy Loaded Footer Section */}
       <ErrorBoundary>
-        <Suspense fallback={<div style={{ height: '240px', background: '#052E16' }} />}>
+        <Suspense fallback={<FooterSkeleton />}>
           <FooterSection />
         </Suspense>
       </ErrorBoundary>
@@ -84,9 +121,11 @@ export default function LandingPage() {
         <Toast
           message={toast.message}
           type={toast.type || 'success'}
-          onClose={() => setToast(null)}
+          onClose={handleCloseToast}
         />
       )}
     </div>
   );
-}
+});
+
+export default LandingPage;

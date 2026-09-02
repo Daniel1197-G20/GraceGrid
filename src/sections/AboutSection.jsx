@@ -96,7 +96,11 @@ export const AboutSection = memo(function AboutSection() {
             <figure className="cinematic-photo-frame">
               {/* Photo Background */}
               <img 
-                src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1200&auto=format&fit=crop&q=80" 
+                src="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&auto=format&fit=crop&q=80&fm=webp" 
+                srcSet="https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400&auto=format&fit=crop&q=75&fm=webp 400w,
+                        https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=800&auto=format&fit=crop&q=80&fm=webp 800w,
+                        https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1200&auto=format&fit=crop&q=80&fm=webp 1200w"
+                sizes="(max-width: 1024px) 90vw, 520px"
                 alt="Folded hands praying over an open Bible overlooking mountain vista during sunset" 
                 className="cinematic-photo-img"
                 loading="lazy"

@@ -105,9 +105,13 @@ export default function PhoneMockup() {
               </div>
               <div className="app-avatar-badge">
                 <img 
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" 
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=75&fm=webp" 
                   alt="User avatar" 
                   className="mockup-avatar" 
+                  loading="lazy"
+                  decoding="async"
+                  width="28"
+                  height="28"
                 />
                 <span className="online-indicator" />
               </div>

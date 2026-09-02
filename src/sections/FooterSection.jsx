@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import Logo from '../components/Logo';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import { LeafPattern } from '../components/DecorativeAssets';
 import { Heart, Sparkles, Send, ShieldCheck } from 'lucide-react';
 import './FooterSection.css';
@@ -42,6 +43,7 @@ const BLESSING_VERSES = [
 export const FooterSection = memo(function FooterSection() {
   const [activeVerseIndex, setActiveVerseIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const [footerRef, isVisible] = useIntersectionObserver({ threshold: 0.1, triggerOnce: false });
 
   const scrollTo = useCallback((e, id) => {
     e.preventDefault();
@@ -61,21 +63,27 @@ export const FooterSection = memo(function FooterSection() {
     return () => clearTimeout(timeout);
   }, [activeVerseIndex]);
 
-  // 5-Second Auto-Rotation Loop
+  // 5-Second Auto-Rotation Loop: Only active when visible in viewport
   useEffect(() => {
+    if (!isVisible) return;
+
+    let fadeTimer = null;
     const interval = setInterval(() => {
       setIsFading(true);
-      setTimeout(() => {
+      fadeTimer = setTimeout(() => {
         setActiveVerseIndex((prevIndex) => (prevIndex + 1) % BLESSING_VERSES.length);
         setIsFading(false);
       }, 350);
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      clearInterval(interval);
+      if (fadeTimer) clearTimeout(fadeTimer);
+    };
+  }, [isVisible]);
 
   return (
-    <footer className="cinematic-footer" role="contentinfo" aria-label="GraceGrid Footer">
+    <footer ref={footerRef} className="cinematic-footer" role="contentinfo" aria-label="GraceGrid Footer">
       {/* Subtle Leaf Patterns in the Corners */}
       <LeafPattern position="top-right" opacity={0.15} size={160} />
       <LeafPattern position="bottom-left" opacity={0.15} size={160} />
