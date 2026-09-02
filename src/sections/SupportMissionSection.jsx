@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import Badge from '../components/Badge';
 import { LeafPattern } from '../components/DecorativeAssets';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
@@ -13,97 +13,80 @@ import {
   Building2, 
   Zap, 
   Lock,
-  CheckCircle2,
-  TrendingUp,
-  Target
+  CheckCircle2
 } from 'lucide-react';
 import './SupportMissionSection.css';
 
-// Two Transparent Campaign Targets
-const DEFAULT_CAMPAIGN_TARGETS = [
+// Campaign Milestones (No attached amounts)
+const CAMPAIGN_MILESTONES = [
   {
     id: 'domain',
     title: 'GraceGrid .com Domain',
-    purpose: 'Global Web Domain',
-    amount: 10000,
-    raised: 6500, // Dynamic initial amount, can be updated via prop or live integration
-    icon: Globe,
     badgeText: 'Milestone 1',
-    description: 'Purchase the official permanent gracegrid.com domain and configure secure SSL encryption for worldwide fellowship access.',
+    icon: Globe,
+    description: 'Securing our permanent official gracegrid.com domain and dedicated SSL encryption for global fellowship, worship streaming, and community access.',
   },
   {
     id: 'playstore',
     title: 'Google Play Store Release',
-    purpose: 'Android Mobile Sanctuary',
-    amount: 37000,
-    raised: 14500, // Dynamic initial amount, can be updated via prop or live integration
-    icon: Smartphone,
     badgeText: 'Milestone 2',
-    description: 'Publish GraceGrid on the Google Play Store by funding the official Google Play Console developer license registration.',
+    icon: Smartphone,
+    description: 'Acquiring the Google Play Console developer license to publish and distribute the GraceGrid Android sanctuary app directly to believers worldwide.',
   },
 ];
 
-const TOTAL_CAMPAIGN_GOAL = 47000;
+// Preset gift amounts for standard giving app experience
+const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 25000];
 
-export const SupportMissionSection = memo(function SupportMissionSection({ 
-  onShowToast,
-  campaignTargets = DEFAULT_CAMPAIGN_TARGETS 
-}) {
+export const SupportMissionSection = memo(function SupportMissionSection({ onShowToast }) {
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.15 });
 
-  // Dynamic campaign state
-  const [campaigns] = useState(campaignTargets);
+  // Giving amount state
+  const [selectedAmount, setSelectedAmount] = useState(5000);
+  const [customAmount, setCustomAmount] = useState('');
 
-  // Automatic calculation of totals, percentages, and remaining amounts
-  const { totalGoal, totalRaised, totalPercentage, totalRemaining, items } = useMemo(() => {
-    const goal = TOTAL_CAMPAIGN_GOAL;
-    const currentRaised = campaigns.reduce((sum, item) => sum + (Number(item.raised) || 0), 0);
-    const percentage = Math.min(100, Math.round((currentRaised / goal) * 100));
-    const remaining = Math.max(0, goal - currentRaised);
-
-    const calculatedItems = campaigns.map((c) => {
-      const itemRaised = Number(c.raised) || 0;
-      const itemGoal = Number(c.amount) || 1;
-      const itemPct = Math.min(100, Math.round((itemRaised / itemGoal) * 100));
-      const itemRem = Math.max(0, itemGoal - itemRaised);
-
-      return {
-        ...c,
-        calculatedRaised: itemRaised,
-        percentage: itemPct,
-        remaining: itemRem,
-      };
-    });
-
-    return {
-      totalGoal: goal,
-      totalRaised: currentRaised,
-      totalPercentage: percentage,
-      totalRemaining: remaining,
-      items: calculatedItems,
-    };
-  }, [campaigns]);
-
-  // Currency Formatter Helper (Nigerian Naira)
+  // Currency Formatter Helper
   const formatNaira = useCallback((val) => {
     return '₦' + Number(val).toLocaleString('en-NG');
   }, []);
 
-  // Payment gateway URLs
+  const effectiveAmount = customAmount !== '' ? Number(customAmount) : selectedAmount;
+
+  // Payment gateway URL (Paystack powered, without exposing processor branding)
   const paystackUrl = import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid';
-  const flutterwaveUrl = import.meta.env.VITE_FLUTTERWAVE_PAYMENT_URL || 'https://flutterwave.com/pay/gracegrid';
 
-  const handlePaystackClick = useCallback(() => {
-    if (onShowToast) {
-      onShowToast('Opening secure Paystack giving gateway...', 'info');
-    }
-  }, [onShowToast]);
+  const handleSelectPreset = (amount) => {
+    setSelectedAmount(amount);
+    setCustomAmount('');
+  };
 
-  const handleFlutterwaveClick = useCallback(() => {
-    if (onShowToast) {
-      onShowToast('Opening secure Flutterwave giving gateway...', 'info');
+  const handleCustomChange = (e) => {
+    const rawVal = e.target.value.replace(/[^0-9]/g, '');
+    setCustomAmount(rawVal);
+    if (rawVal !== '') {
+      setSelectedAmount(null);
     }
-  }, [onShowToast]);
+  };
+
+  const handleGiveSubmit = useCallback(() => {
+    if (onShowToast) {
+      const displayAmount = effectiveAmount && effectiveAmount > 0 ? formatNaira(effectiveAmount) : '';
+      onShowToast(`Proceeding to secure checkout${displayAmount ? ` for ${displayAmount}` : ''}...`, 'info');
+    }
+
+    // Build URL with optional amount parameter
+    let targetUrl = paystackUrl;
+    if (effectiveAmount && effectiveAmount > 0) {
+      const sep = paystackUrl.includes('?') ? '&' : '?';
+      targetUrl = `${paystackUrl}${sep}amount=${effectiveAmount * 100}`;
+    }
+
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  }, [paystackUrl, effectiveAmount, formatNaira, onShowToast]);
+
+  const buttonLabel = effectiveAmount && !isNaN(effectiveAmount) && effectiveAmount > 0
+    ? `Support GraceGrid (${formatNaira(effectiveAmount)})`
+    : 'Support GraceGrid';
 
   return (
     <section 
@@ -122,7 +105,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({
           <div className="support-card-header">
             <Badge variant="gold" pulse={true} className="support-pill">
               <Heart size={13} className="heart-icon-gold" aria-hidden="true" />
-              <span>Kingdom Crowdfunding</span>
+              <span>Kingdom Stewardship</span>
             </Badge>
 
             <h2 className="support-main-title">
@@ -134,52 +117,13 @@ export const SupportMissionSection = memo(function SupportMissionSection({
             </p>
 
             <p className="support-mission-statement">
-              GraceGrid is an independent, non-commercial digital sanctuary built for live worship, daily scripture feeds, and prayer circles. To launch this sanctuary freely to the global body of Christ, we are raising transparent seed support for our two immediate pre-launch infrastructure milestones.
+              GraceGrid is an independent, non-commercial digital sanctuary built for worship, daily scripture feeds, and biblical prayer circles. Your seed support clears our pre-launch milestones so we can make this sanctuary available to the global body of Christ.
             </p>
           </div>
 
-          {/* Master Campaign Progress Box */}
-          <div className="crowdfund-master-hero" role="region" aria-label="Crowdfunding Total Progress">
-            <div className="master-hero-top">
-              <div className="master-stat-group">
-                <span className="master-stat-label">Total Campaign Goal</span>
-                <div className="master-stat-value">
-                  <span className="master-amount-goal">{formatNaira(totalGoal)}</span>
-                </div>
-              </div>
-
-              <div className="master-progress-badge-group">
-                <span className="master-badge-pill">
-                  <TrendingUp size={14} aria-hidden="true" />
-                  <span>{totalPercentage}% Funded</span>
-                </span>
-                <span className="master-sub-metric">
-                  <strong>{formatNaira(totalRaised)}</strong> raised &bull; <strong>{formatNaira(totalRemaining)}</strong> remaining
-                </span>
-              </div>
-            </div>
-
-            {/* Master Progress Bar */}
-            <div 
-              className="master-progress-track"
-              role="progressbar"
-              aria-valuenow={totalPercentage}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Overall crowdfunding progress: ${totalPercentage}% funded`}
-            >
-              <div 
-                className="master-progress-fill"
-                style={{ width: `${totalPercentage}%` }}
-              >
-                <div className="master-progress-shimmer" />
-              </div>
-            </div>
-          </div>
-
-          {/* Two Campaign Cards Grid */}
-          <div className="campaign-cards-grid" role="region" aria-label="Fundraising Targets">
-            {items.map((item) => {
+          {/* Two Campaign Milestone Cards Grid (Without attached amounts) */}
+          <div className="campaign-cards-grid" role="region" aria-label="Campaign Milestones">
+            {CAMPAIGN_MILESTONES.map((item) => {
               const IconComponent = item.icon;
               return (
                 <div key={item.id} className="campaign-target-card">
@@ -197,101 +141,98 @@ export const SupportMissionSection = memo(function SupportMissionSection({
                     {item.description}
                   </p>
 
-                  <div className="campaign-amount-box">
-                    <div className="campaign-amount-row">
-                      <span className="campaign-target-label">Target</span>
-                      <span className="campaign-target-val">{formatNaira(item.amount)}</span>
-                    </div>
-
-                    <div className="campaign-mini-track" role="progressbar" aria-valuenow={item.percentage} aria-valuemin={0} aria-valuemax={100}>
-                      <div 
-                        className="campaign-mini-fill"
-                        style={{ width: `${item.percentage}%` }}
-                      />
-                    </div>
-
-                    <div className="campaign-progress-meta">
-                      <span className="campaign-raised-text">
-                        <strong>{formatNaira(item.calculatedRaised)}</strong> raised ({item.percentage}%)
-                      </span>
-                      <span className="campaign-remaining-text">
-                        {item.remaining === 0 ? 'Goal Reached!' : `${formatNaira(item.remaining)} to go`}
-                      </span>
-                    </div>
+                  <div className="campaign-milestone-footer">
+                    <span className="milestone-status-pill">
+                      <CheckCircle2 size={13} aria-hidden="true" /> Launch Milestone
+                    </span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Payment Options (Paystack & Flutterwave) */}
-          <div className="payment-options-section" role="region" aria-label="Support Payment Options">
-            <div className="payment-header-row">
-              <span className="payment-section-title">
-                <CreditCard size={16} aria-hidden="true" /> Select Your Giving Method
-              </span>
-              <span className="payment-security-pill">
+          {/* Normal App Giving Box */}
+          <div className="giving-checkout-box" role="region" aria-label="Make a Donation">
+            <div className="giving-box-header">
+              <div className="giving-header-lead">
+                <Heart size={18} className="heart-icon-green" aria-hidden="true" />
+                <span className="giving-header-title">Choose Your Seed Amount</span>
+              </div>
+              <span className="giving-secure-tag">
                 <Lock size={12} aria-hidden="true" /> 256-Bit SSL Encrypted
               </span>
             </div>
 
-            <div className="payment-buttons-grid">
-              {/* Paystack Primary Button */}
-              <a
-                href={paystackUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handlePaystackClick}
-                className="btn-pay-option btn-paystack-primary"
-                aria-label="Support GraceGrid using Paystack (Cards, Bank Transfer, USSD, Apple Pay)"
-              >
-                <div className="btn-pay-content">
-                  <div className="btn-pay-lead">
-                    <Heart size={18} className="btn-icon-gold" aria-hidden="true" />
-                    <span className="btn-pay-name">Give with Paystack</span>
-                  </div>
-                  <span className="btn-pay-hint">Cards &bull; Bank Transfer &bull; USSD</span>
-                </div>
-                <ExternalLink size={16} className="btn-external-icon" aria-hidden="true" />
-              </a>
-
-              {/* Flutterwave Secondary Button */}
-              <a
-                href={flutterwaveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleFlutterwaveClick}
-                className="btn-pay-option btn-flutterwave-secondary"
-                aria-label="Support GraceGrid using Flutterwave (Debit Cards, Wire, Mobile Money)"
-              >
-                <div className="btn-pay-content">
-                  <div className="btn-pay-lead">
-                    <Zap size={18} className="btn-icon-amber" aria-hidden="true" />
-                    <span className="btn-pay-name">Give with Flutterwave</span>
-                  </div>
-                  <span className="btn-pay-hint">Cards &bull; Mobile Money &bull; Transfer</span>
-                </div>
-                <ExternalLink size={16} className="btn-external-icon" aria-hidden="true" />
-              </a>
+            {/* Quick Amount Selector Chips */}
+            <div className="amount-chips-grid" role="group" aria-label="Select giving amount">
+              {PRESET_AMOUNTS.map((amt) => {
+                const isSelected = selectedAmount === amt && customAmount === '';
+                return (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => handleSelectPreset(amt)}
+                    className={`amount-chip ${isSelected ? 'amount-chip-active' : ''}`}
+                    aria-pressed={isSelected}
+                  >
+                    {formatNaira(amt)}
+                  </button>
+                );
+              })}
             </div>
 
+            {/* Custom Amount Input */}
+            <div className="custom-amount-row">
+              <label htmlFor="custom-giving-input" className="custom-amount-label">
+                Or enter custom amount:
+              </label>
+              <div className="custom-input-group">
+                <span className="currency-prefix" aria-hidden="true">₦</span>
+                <input
+                  id="custom-giving-input"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Other amount (e.g. 15000)"
+                  value={customAmount}
+                  onChange={handleCustomChange}
+                  className="custom-amount-input"
+                  aria-label="Enter custom giving amount in Naira"
+                />
+              </div>
+            </div>
+
+            {/* Primary Action Button (Without Paystack label) */}
+            <div className="giving-action-wrapper">
+              <button
+                type="button"
+                onClick={handleGiveSubmit}
+                className="btn-give-primary"
+                aria-label={buttonLabel}
+              >
+                <Heart size={18} className="btn-heart-give" aria-hidden="true" />
+                <span>{buttonLabel}</span>
+                <ExternalLink size={16} className="btn-ext-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Supported Payment Channels */}
             <div className="payment-channels-row" aria-label="Accepted payment methods">
               <span className="channel-pill">
-                <CreditCard size={13} aria-hidden="true" /> Visa &bull; Mastercard &bull; Verve
+                <CreditCard size={13} aria-hidden="true" /> Debit / Credit Cards
               </span>
               <span className="channel-pill">
                 <Building2 size={13} aria-hidden="true" /> Direct Bank Transfer
               </span>
               <span className="channel-pill">
-                <Zap size={13} aria-hidden="true" /> USSD &bull; QR
+                <Zap size={13} aria-hidden="true" /> USSD &bull; Apple Pay
               </span>
               <span className="channel-pill">
-                <Lock size={13} aria-hidden="true" /> PCI-DSS Certified
+                <ShieldCheck size={13} aria-hidden="true" /> PCI-DSS Certified
               </span>
             </div>
           </div>
 
-          {/* Transparency: What your support funds */}
+          {/* Transparency: What your support funds (Without price tags) */}
           <div className="transparency-breakdown-card" role="region" aria-label="What your support funds">
             <div className="transparency-header">
               <div className="transparency-title-lead">
@@ -302,7 +243,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({
             </div>
 
             <p className="transparency-intro">
-              We operate with total kingdom transparency. Every single naira donated is audited and deployed directly to clear these two technical milestones:
+              We operate with total kingdom transparency. Every gift is audited and channeled directly into our technical launch milestones:
             </p>
 
             <div className="transparency-items-list">
@@ -311,14 +252,14 @@ export const SupportMissionSection = memo(function SupportMissionSection({
                 <div className="transparency-item-main">
                   <span className="transparency-item-icon" aria-hidden="true">🌐</span>
                   <div className="transparency-item-details">
-                    <span className="transparency-item-name">Domain (.com)</span>
+                    <span className="transparency-item-name">Official .com Web Domain</span>
                     <span className="transparency-item-desc">
-                      Official permanent gracegrid.com domain registration and worldwide DNS routing.
+                      Permanent web identity (gracegrid.com) and global HTTPS SSL routing for worldwide believers.
                     </span>
                   </div>
                 </div>
-                <div className="transparency-item-cost">
-                  <span className="cost-tag">₦10,000</span>
+                <div className="transparency-item-meta">
+                  <span className="milestone-tag">Launch Milestone</span>
                 </div>
               </div>
 
@@ -329,12 +270,12 @@ export const SupportMissionSection = memo(function SupportMissionSection({
                   <div className="transparency-item-details">
                     <span className="transparency-item-name">Google Play Store Developer Account</span>
                     <span className="transparency-item-desc">
-                      One-time Google Play Console developer registration ($25 USD) to publish the Android APK globally.
+                      Google Play Console registration enabling immediate global download on Android devices.
                     </span>
                   </div>
                 </div>
-                <div className="transparency-item-cost">
-                  <span className="cost-tag">₦37,000</span>
+                <div className="transparency-item-meta">
+                  <span className="milestone-tag">Launch Milestone</span>
                 </div>
               </div>
             </div>

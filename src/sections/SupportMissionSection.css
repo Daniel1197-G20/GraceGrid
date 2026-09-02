@@ -1,6 +1,6 @@
 /* ==============================================================================
-   GraceGrid — Support GraceGrid Crowdfunding Section Styles
-   Emerald Glassmorphism & High Performance UI
+   GraceGrid — Support GraceGrid Giving Section Styles
+   Emerald Glassmorphism & High Performance Mobile-First UI
    ============================================================================== */
 
 .support-mission-section {
@@ -93,126 +93,7 @@
 }
 
 /* ==============================================================================
-   Master Hero Progress Card
-   ============================================================================== */
-.crowdfund-master-hero {
-  background: linear-gradient(135deg, #052E16 0%, #0A3D20 50%, #0F4A28 100%);
-  color: #FFFFFF;
-  border-radius: var(--radius-xl);
-  padding: clamp(1.5rem, 3.5vw, 2rem);
-  box-shadow: 0 16px 36px -6px rgba(5, 46, 22, 0.28);
-  border: 1px solid rgba(74, 222, 128, 0.25);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  transform: translateZ(0);
-}
-
-.master-hero-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-}
-
-.master-stat-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.master-stat-label {
-  font-family: var(--font-heading);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent-gold);
-}
-
-.master-stat-value {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.master-amount-goal {
-  font-family: var(--font-heading), monospace;
-  font-size: clamp(2rem, 5vw, 2.75rem);
-  font-weight: 900;
-  color: #4ADE80;
-  line-height: 1;
-  text-shadow: 0 2px 12px rgba(74, 222, 128, 0.3);
-}
-
-.master-progress-badge-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.4rem;
-}
-
-.master-badge-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.85rem;
-  background: rgba(34, 197, 94, 0.22);
-  border: 1px solid #4ADE80;
-  border-radius: var(--radius-pill);
-  color: #86EFAC;
-  font-family: var(--font-heading);
-  font-size: 0.875rem;
-  font-weight: 700;
-}
-
-.master-sub-metric {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.master-sub-metric strong {
-  color: #FFFFFF;
-}
-
-/* Master Progress Bar Track & Fill */
-.master-progress-track {
-  width: 100%;
-  height: 14px;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.master-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #16A34A 0%, #22C55E 55%, #FDE047 100%);
-  border-radius: var(--radius-pill);
-  position: relative;
-  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 16px rgba(34, 197, 94, 0.6);
-}
-
-.master-progress-shimmer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
-  opacity: 0.6;
-}
-
-/* ==============================================================================
-   Two Campaign Cards Grid
+   Two Campaign Milestones Grid (No attached amounts)
    ============================================================================== */
 .campaign-cards-grid {
   display: grid;
@@ -246,8 +127,8 @@
 }
 
 .campaign-icon-badge {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-md);
   background: #DCFCE7;
   color: #15803D;
@@ -266,7 +147,7 @@
 
 .campaign-badge {
   font-family: var(--font-heading);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -283,93 +164,50 @@
 }
 
 .campaign-description {
-  font-size: 0.885rem;
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--text-secondary);
   margin: 0;
   flex-grow: 1;
 }
 
-.campaign-amount-box {
-  background: rgba(240, 253, 244, 0.75);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: var(--radius-md);
-  padding: 0.95rem 1.15rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.campaign-amount-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.campaign-target-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-
-.campaign-target-val {
-  font-family: var(--font-heading), monospace;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #15803D;
-}
-
-.campaign-mini-track {
-  width: 100%;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.campaign-mini-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
-  border-radius: var(--radius-pill);
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.campaign-progress-meta {
+.campaign-milestone-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 0.785rem;
-  color: var(--text-muted);
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  margin-top: 0.25rem;
 }
 
-.campaign-raised-text strong {
+.milestone-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: #166534;
-}
-
-.campaign-remaining-text {
-  color: #15803D;
-  font-weight: 600;
+  background: #DCFCE7;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
 }
 
 /* ==============================================================================
-   Payment Options Section (Paystack & Flutterwave)
+   Normal App Giving Box (Interactive Amount Selector & Giving Button)
    ============================================================================== */
-.payment-options-section {
+.giving-checkout-box {
   background: linear-gradient(135deg, #FFFFFF 0%, #F4FBF6 100%);
   border: 1.5px solid rgba(22, 163, 74, 0.25);
   border-radius: var(--radius-xl);
-  padding: clamp(1.35rem, 3.5vw, 2rem);
+  padding: clamp(1.5rem, 3.5vw, 2.25rem);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  box-shadow: 0 8px 24px -4px rgba(5, 46, 22, 0.05);
+  gap: 1.5rem;
+  box-shadow: 0 10px 30px -5px rgba(5, 46, 22, 0.06);
 }
 
-.payment-header-row {
+.giving-box-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -377,19 +215,26 @@
   flex-wrap: wrap;
 }
 
-.payment-section-title {
-  display: inline-flex;
+.giving-header-lead {
+  display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-family: var(--font-heading);
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #14532D;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  gap: 0.5rem;
 }
 
-.payment-security-pill {
+.heart-icon-green {
+  color: #16A34A;
+  fill: rgba(22, 163, 74, 0.2);
+}
+
+.giving-header-title {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #14532D;
+  letter-spacing: -0.01em;
+}
+
+.giving-secure-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -402,121 +247,172 @@
   border-radius: var(--radius-pill);
 }
 
-.payment-buttons-grid {
+/* Amount Selector Chips Grid */
+.amount-chips-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
 }
 
-/* Base Payment Button */
-.btn-pay-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.1rem 1.4rem;
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  min-height: 72px;
+.amount-chip {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(22, 163, 74, 0.28);
+  color: #15803D;
+  font-family: var(--font-heading), monospace;
+  font-weight: 700;
+  font-size: 1.025rem;
+  padding: 0.85rem 0.5rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
   -webkit-tap-highlight-color: transparent;
 }
 
-.btn-pay-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  text-align: left;
+.amount-chip:hover {
+  background: #DCFCE7;
+  border-color: #16A34A;
+  transform: translateY(-2px);
 }
 
-.btn-pay-lead {
+.amount-chip-active {
+  background: linear-gradient(135deg, #15803D 0%, #16A34A 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #15803D !important;
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Custom Amount Row */
+.custom-amount-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.btn-pay-name {
+.custom-amount-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.custom-input-group {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(22, 163, 74, 0.3);
+  border-radius: var(--radius-md);
+  padding: 0 1rem;
+  height: 46px;
+  min-width: 220px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-input-group:focus-within {
+  border-color: #16A34A;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+.currency-prefix {
   font-family: var(--font-heading);
-  font-size: 1.05rem;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #15803D;
+  margin-right: 0.35rem;
+}
+
+.custom-amount-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-family: var(--font-heading), monospace;
+  font-size: 1rem;
   font-weight: 700;
-  line-height: 1.2;
+  color: var(--text-primary);
+  outline: none;
 }
 
-.btn-pay-hint {
-  font-size: 0.78rem;
-  opacity: 0.85;
+.custom-amount-input::placeholder {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
-.btn-external-icon {
-  flex-shrink: 0;
-  opacity: 0.8;
-  margin-left: 0.75rem;
+/* Primary Action Button (Without Paystack label) */
+.giving-action-wrapper {
+  display: flex;
+  flex-direction: column;
 }
 
-/* Paystack Primary Button */
-.btn-paystack-primary {
+.btn-give-primary {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #FFFFFF !important;
   background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
-  color: #FFFFFF !important;
-  box-shadow: 0 8px 24px rgba(22, 163, 74, 0.32);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(22, 163, 74, 0.35);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.btn-paystack-primary:hover {
+.btn-give-primary:hover {
   background: linear-gradient(135deg, #166534 0%, #15803D 100%);
-  box-shadow: 0 10px 28px rgba(22, 163, 74, 0.42);
+  box-shadow: 0 12px 30px rgba(22, 163, 74, 0.45);
   transform: translateY(-2px);
   color: #FFFFFF !important;
 }
 
-.btn-icon-gold {
+.btn-give-primary:active {
+  transform: translateY(0);
+}
+
+.btn-heart-give {
   color: #FEF08A;
-  fill: rgba(254, 240, 138, 0.4);
+  fill: rgba(254, 240, 138, 0.45);
+  flex-shrink: 0;
 }
 
-/* Flutterwave Secondary Button */
-.btn-flutterwave-secondary {
-  background: linear-gradient(135deg, #FFFFFF 0%, #FFFDF8 100%);
-  color: #1F2937 !important;
-  border: 1.5px solid #F59E0B;
-  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.15);
+.btn-ext-icon {
+  opacity: 0.85;
+  flex-shrink: 0;
 }
 
-.btn-flutterwave-secondary:hover {
-  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
-  border-color: #D97706;
-  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
-  transform: translateY(-2px);
-  color: #111827 !important;
-}
-
-.btn-icon-amber {
-  color: #D97706;
-  fill: rgba(217, 119, 6, 0.2);
-}
-
-/* Channel Pills */
+/* Payment Channels Row */
 .payment-channels-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
 }
 
 .channel-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.785rem;
+  gap: 0.4rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #065F46;
   background: rgba(220, 252, 231, 0.7);
   border: 1px solid rgba(22, 163, 74, 0.2);
-  padding: 0.3rem 0.65rem;
+  padding: 0.35rem 0.75rem;
   border-radius: var(--radius-pill);
 }
 
 /* ==============================================================================
-   Transparency Section: What your support funds
+   Transparency Section: What your support funds (Without price tags)
    ============================================================================== */
 .transparency-breakdown-card {
   background: #FFFFFF;
@@ -622,20 +518,22 @@
   line-height: 1.4;
 }
 
-.transparency-item-cost {
+.transparency-item-meta {
   flex-shrink: 0;
 }
 
-.cost-tag {
-  font-family: var(--font-heading), monospace;
-  font-size: 1.05rem;
-  font-weight: 800;
+.milestone-tag {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 700;
   color: #15803D;
   background: #DCFCE7;
   border: 1px solid rgba(22, 163, 74, 0.25);
-  padding: 0.35rem 0.75rem;
+  padding: 0.3rem 0.75rem;
   border-radius: var(--radius-pill);
   display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .transparency-guarantee {
@@ -707,30 +605,29 @@
     -webkit-backdrop-filter: none;
   }
 
-  .master-hero-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.85rem;
-  }
-
-  .master-progress-badge-group {
-    align-items: flex-start;
-    width: 100%;
-  }
-
   .campaign-cards-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
 
-  .payment-buttons-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+  .amount-chips-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
   }
 
-  .btn-pay-option {
-    min-height: 64px;
-    padding: 1rem 1.15rem;
+  .custom-amount-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .custom-input-group {
+    width: 100%;
+  }
+
+  .btn-give-primary {
+    min-height: 52px;
+    font-size: 1.05rem;
   }
 
   .transparency-item {
@@ -739,8 +636,7 @@
     gap: 0.5rem;
   }
 
-  .transparency-item-cost {
+  .transparency-item-meta {
     align-self: flex-start;
   }
 }
-
