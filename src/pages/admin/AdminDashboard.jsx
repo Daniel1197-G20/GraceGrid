@@ -442,7 +442,7 @@ export default function AdminDashboard() {
             </div>
             <div className="user-info-text">
               <span className="user-email-display" title={adminUser?.email}>
-                {adminUser?.email || 'admin@gracegrid.app'}
+                {adminUser?.email || 'gracegrid4@gmail.com'}
               </span>
               <span className="user-role-label">{adminUser?.authType || 'Super Admin'}</span>
             </div>

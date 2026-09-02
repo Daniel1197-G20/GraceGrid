@@ -6,12 +6,14 @@
 // 2. Validate payload (fullName and email)
 // 3. Prevent duplicates in PostgreSQL (public.waitlist)
 // 4. Save subscriber into PostgreSQL via Supabase Service Role client
-// 5. Read BREVO_API_KEY, BREVO_TEMPLATE_ID, and verified sender from Supabase Secrets
-// 6. Send TWO Brevo emails:
-//    - Welcome email to the subscriber using the configured Brevo template ID
-//    - Admin notification email containing the subscriber's full name and email
-// 7. Add comprehensive error logging for all Brevo API responses
-// 8. Return success only after both emails are sent successfully
+// 5. Brevo Email Automation (Referenced from Velour Salon):
+//    - Welcome email to subscriber with rich branded HTML, referral invite link & personal role
+//    - Admin signup notification alert to gracegrid4@gmail.com with live cohort progress & direct replyTo
+//    - Resilient dual-endpoint delivery (api.brevo.com with fallback to api.sendinblue.com)
+//    - Direct HTML email content (no dependency on fragile remote Brevo template configurations)
+//    - Optional Brevo templateId support with automatic HTML fallback
+//    - Contact list sync if BREVO_LIST_ID is configured
+// 6. Return standard JSON responses (200 success, 409 duplicate, 400 validation, 500 error)
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -23,6 +25,7 @@ const CORS_HEADERS = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LAUNCH_TARGET = 50;
+const DEFAULT_ADMIN_EMAIL = 'gracegrid4@gmail.com';
 
 interface WaitlistPayload {
   fullName?: string;
@@ -39,6 +42,87 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
       'Content-Type': 'application/json',
     },
   });
+}
+
+function generateWelcomeEmailHtml({
+  firstName,
+  trimmedFullName,
+  normalizedEmail,
+  trimmedRole,
+  devPhase,
+  inviteLink,
+}: {
+  firstName: string;
+  trimmedFullName: string;
+  normalizedEmail: string;
+  trimmedRole: string;
+  devPhase: string;
+  inviteLink: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to GraceGrid</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #021e10; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f0fdf4; }
+    .wrapper { max-width: 600px; margin: 40px auto; background-color: #062c19; border: 1px solid #16a34a33; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    .header { padding: 40px 32px 20px; text-align: center; background: radial-gradient(circle at top, rgba(34, 197, 94, 0.25), transparent 70%); }
+    .cross { font-size: 36px; margin-bottom: 12px; }
+    .title { font-size: 26px; font-weight: 700; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.5px; }
+    .badge { display: inline-block; padding: 4px 14px; background: rgba(212, 175, 55, 0.15); border: 1px solid #d4af37; border-radius: 999px; color: #fef08a; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .body-content { padding: 32px; font-size: 16px; line-height: 1.65; color: #dcfce7; }
+    .card-highlight { background: rgba(0,0,0,0.3); border: 1px solid rgba(22, 163, 74, 0.3); border-radius: 12px; padding: 20px; margin: 24px 0; }
+    .highlight-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .highlight-label { color: #86efac; }
+    .highlight-val { color: #ffffff; font-weight: 600; }
+    .btn { display: block; text-align: center; background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff !important; text-decoration: none; padding: 16px 28px; border-radius: 10px; font-weight: 700; font-size: 16px; margin: 30px 0 20px; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.3); }
+    .footer { padding: 24px 32px; background-color: #021a0d; text-align: center; font-size: 13px; color: #4ade8099; border-top: 1px solid rgba(22, 163, 74, 0.2); }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="cross">🕊️</div>
+      <div class="badge">${devPhase}</div>
+      <h1 class="title">Welcome to GraceGrid</h1>
+    </div>
+    <div class="body-content">
+      <p>Grace and peace to you, <strong>${firstName}</strong>,</p>
+      <p>Thank you for stepping into the early access waitlist for <strong>GraceGrid</strong> — a dedicated digital sanctuary built for prayer, live worship, and biblical fellowship free from secular distractions.</p>
+      
+      <div class="card-highlight">
+        <div class="highlight-item">
+          <span class="highlight-label">Community Role:</span>
+          <span class="highlight-val">${trimmedRole.toUpperCase()}</span>
+        </div>
+        <div class="highlight-item">
+          <span class="highlight-label">Waitlist Status:</span>
+          <span class="highlight-val" style="color: #4ade80;">CONFIRMED</span>
+        </div>
+        <div class="highlight-item">
+          <span class="highlight-label">Launch Cohort:</span>
+          <span class="highlight-val" style="color: #fef08a;">First 50 Believers Goal</span>
+        </div>
+      </div>
+
+      <p>We are actively preparing this sanctuary. You will receive exclusive project development updates directly to <code>${normalizedEmail}</code> as we roll out closed beta invites and new scripture rooms.</p>
+
+      <a href="${inviteLink}" class="btn">Share Your Fellowship Invite Link</a>
+
+      <p style="font-size: 14px; color: #86efac; text-align: center;">
+        Your invite link: <br>
+        <span style="color: #fef08a; word-break: break-all;">${inviteLink}</span>
+      </p>
+    </div>
+    <div class="footer">
+      <p>© ${new Date().getFullYear()} GraceGrid. Designed for the global body of Christ.</p>
+      <p>You received this because you registered at gracegrid.app.</p>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 function generateAdminAlertEmailHtml({
@@ -126,6 +210,122 @@ function generateAdminAlertEmailHtml({
 </html>`;
 }
 
+/**
+ * Resilient Brevo Email Sender with primary & backup endpoints
+ * Referenced from Velour Salon email automation architecture.
+ */
+async function sendBrevoEmail({
+  apiKey,
+  senderName,
+  senderEmail,
+  to,
+  subject,
+  htmlContent,
+  textContent,
+  replyTo,
+  templateId,
+  params,
+}: {
+  apiKey: string;
+  senderName: string;
+  senderEmail: string;
+  to: { email: string; name?: string }[];
+  subject: string;
+  htmlContent: string;
+  textContent?: string;
+  replyTo?: { email: string; name?: string };
+  templateId?: number | null;
+  params?: Record<string, unknown>;
+}): Promise<{ success: boolean; status: number; messageId?: string; error?: string }> {
+  const headers = {
+    'accept': 'application/json',
+    'api-key': apiKey.trim(),
+    'content-type': 'application/json',
+  };
+
+  const primaryUrl = 'https://api.brevo.com/v3/smtp/email';
+  const backupUrl = 'https://api.sendinblue.com/v3/smtp/email';
+
+  // 1. If templateId is explicitly configured, attempt template dispatch first
+  if (templateId && templateId > 0) {
+    try {
+      const templatePayload: Record<string, unknown> = {
+        templateId,
+        sender: { name: senderName, email: senderEmail },
+        to,
+        params: params || {},
+      };
+      if (replyTo) templatePayload.replyTo = replyTo;
+
+      const res = await fetch(primaryUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(templatePayload),
+      });
+
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { success: true, status: res.status, messageId: data.messageId };
+      }
+
+      const errText = await res.text();
+      console.warn(`[super-task] Brevo template ${templateId} dispatch failed (${res.status}): ${errText}. Falling back to direct HTML...`);
+    } catch (err) {
+      console.warn(`[super-task] Template dispatch exception: ${(err as Error).message}. Falling back to direct HTML...`);
+    }
+  }
+
+  // 2. Direct HTML Payload (Guaranteed delivery, no remote template dependencies)
+  const directPayload: Record<string, unknown> = {
+    sender: { name: senderName, email: senderEmail },
+    to,
+    subject,
+    htmlContent,
+  };
+  if (textContent) directPayload.textContent = textContent;
+  if (replyTo) directPayload.replyTo = replyTo;
+
+  // Try primary endpoint (api.brevo.com)
+  try {
+    const res = await fetch(primaryUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(directPayload),
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { success: true, status: res.status, messageId: data.messageId };
+    }
+
+    const errText = await res.text();
+    console.warn(`[super-task] Primary Brevo endpoint returned HTTP ${res.status}: ${errText}. Retrying backup endpoint...`);
+  } catch (err) {
+    console.warn(`[super-task] Primary Brevo network failure: ${(err as Error).message}. Retrying backup endpoint...`);
+  }
+
+  // Fallback endpoint (api.sendinblue.com) like in Velour Salon
+  try {
+    const backupRes = await fetch(backupUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(directPayload),
+    });
+
+    if (backupRes.ok) {
+      const data = await backupRes.json().catch(() => ({}));
+      return { success: true, status: backupRes.status, messageId: data.messageId };
+    }
+
+    const backupErr = await backupRes.text();
+    console.error(`[super-task] Backup Brevo endpoint failed (${backupRes.status}): ${backupErr}`);
+    return { success: false, status: backupRes.status, error: backupErr };
+  } catch (backupErr) {
+    console.error(`[super-task] Backup Brevo network failure: ${(backupErr as Error).message}`);
+    return { success: false, status: 500, error: (backupErr as Error).message };
+  }
+}
+
 Deno.serve(async (req: Request) => {
   // 1. Handle CORS Preflight request
   if (req.method === 'OPTIONS') {
@@ -181,17 +381,20 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY');
     const brevoApiKey = Deno.env.get('BREVO_API_KEY');
     const brevoTemplateIdRaw = Deno.env.get('BREVO_TEMPLATE_ID');
-    const brevoSenderEmail =
-      Deno.env.get('BREVO_SENDER_EMAIL') ||
-      Deno.env.get('ADMIN_ALERT_EMAIL') ||
-      Deno.env.get('ADMIN_EMAIL') ||
-      'gracegrid4@gmail.com';
-    const brevoSenderName = Deno.env.get('BREVO_SENDER_NAME') || 'GraceGrid Sanctuary';
+    const brevoListIdStr = Deno.env.get('BREVO_LIST_ID');
+
+    // Admin & Verified Sender Configuration
     const adminAlertEmail =
       Deno.env.get('ADMIN_ALERT_EMAIL') ||
       Deno.env.get('ADMIN_EMAIL') ||
+      DEFAULT_ADMIN_EMAIL;
+
+    const brevoSenderEmail =
       Deno.env.get('BREVO_SENDER_EMAIL') ||
-      'gracegrid4@gmail.com';
+      adminAlertEmail ||
+      DEFAULT_ADMIN_EMAIL;
+
+    const brevoSenderName = Deno.env.get('BREVO_SENDER_NAME') || 'GraceGrid Sanctuary';
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('[super-task] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment.');
@@ -278,7 +481,36 @@ Deno.serve(async (req: Request) => {
       console.warn('[super-task] Could not query total count:', countErr);
     }
 
-    // 10. Validate Brevo Secrets before attempting to send emails
+    // 10. Brevo Contact List Sync (Optional, non-blocking)
+    if (brevoApiKey && brevoListIdStr) {
+      try {
+        const listId = Number(brevoListIdStr);
+        if (!isNaN(listId) && listId > 0) {
+          const firstName = trimmedFullName.split(/\s+/)[0] || trimmedFullName;
+          await fetch('https://api.brevo.com/v3/contacts', {
+            method: 'POST',
+            headers: {
+              'accept': 'application/json',
+              'api-key': brevoApiKey.trim(),
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: normalizedEmail,
+              attributes: {
+                FIRSTNAME: firstName,
+                FULLNAME: trimmedFullName,
+                ROLE: trimmedRole,
+                WAITLIST_STAGE: 'ACTIVE',
+              },
+              listIds: [listId],
+              updateEnabled: true,
+            }),
+          }).catch((err) => console.warn('[super-task] Brevo contact sync warning:', err));
+        }
+      } catch (_) {}
+    }
+
+    // 11. Validate Brevo Secrets before attempting to send emails
     if (!brevoApiKey) {
       console.error('[super-task] BREVO_API_KEY is not configured in Supabase secrets.');
       return jsonResponse(
@@ -290,146 +522,123 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const parsedTemplateId = brevoTemplateIdRaw ? Number(brevoTemplateIdRaw) : 1;
-    const templateId = !isNaN(parsedTemplateId) && parsedTemplateId > 0 ? parsedTemplateId : null;
+    const parsedTemplateId = brevoTemplateIdRaw ? Number(brevoTemplateIdRaw) : null;
+    const templateId = parsedTemplateId && !isNaN(parsedTemplateId) && parsedTemplateId > 0 ? parsedTemplateId : null;
 
-    if (!templateId) {
-      console.error('[super-task] Invalid or missing BREVO_TEMPLATE_ID in Supabase secrets:', brevoTemplateIdRaw);
-      return jsonResponse(
-        {
-          success: false,
-          error: 'Brevo template ID configuration is missing or invalid in secrets.',
-        },
-        500
-      );
-    }
-
-    // 11. Prepare Email 1: Welcome Email to Subscriber via Brevo Template
+    // 12. Email Content Generation
     const firstName = trimmedFullName.split(/\s+/)[0] || trimmedFullName;
     const inviteCode = trimmedFullName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'fellowship';
     const inviteLink = `https://gracegrid.app/?ref=${encodeURIComponent(inviteCode)}`;
     const devPhase = 'Phase 1: Pre-Launch Sanctuary';
     const registeredTimestamp = insertedData.created_at || new Date().toISOString();
 
-    const welcomeEmailPayload = {
-      templateId: templateId,
-      sender: {
-        name: brevoSenderName,
-        email: brevoSenderEmail,
-      },
-      to: [
-        {
-          email: normalizedEmail,
-          name: trimmedFullName,
-        },
-      ],
-      params: {
-        firstName: firstName,
-        FIRSTNAME: firstName,
-        first_name: firstName,
-        fullName: trimmedFullName,
-        FULLNAME: trimmedFullName,
-        full_name: trimmedFullName,
-        name: trimmedFullName,
-        NAME: trimmedFullName,
-        email: normalizedEmail,
-        EMAIL: normalizedEmail,
-        role: trimmedRole,
-        ROLE: trimmedRole,
-        inviteLink: inviteLink,
-        INVITELINK: inviteLink,
-        INVITE_LINK: inviteLink,
-        invite_link: inviteLink,
-        devPhase: devPhase,
-        DEV_PHASE: devPhase,
-        year: new Date().getFullYear(),
-        YEAR: new Date().getFullYear(),
-      },
+    const welcomeHtml = generateWelcomeEmailHtml({
+      firstName,
+      trimmedFullName,
+      normalizedEmail,
+      trimmedRole,
+      devPhase,
+      inviteLink,
+    });
+
+    const welcomeText = `Grace and peace to you, ${firstName}!
+
+Thank you for joining the early access waitlist for GraceGrid — a digital sanctuary for worship and fellowship.
+
+Community Role: ${trimmedRole.toUpperCase()}
+Status: CONFIRMED
+Cohort Target: First 50 Believers
+
+Your personal fellowship invite link:
+${inviteLink}
+
+We will keep you updated as we rollout closed beta invites.
+© ${new Date().getFullYear()} GraceGrid. Designed for the global body of Christ.`;
+
+    const adminHtml = generateAdminAlertEmailHtml({
+      fullName: trimmedFullName,
+      email: normalizedEmail,
+      role: trimmedRole,
+      totalCount,
+      registeredAt: new Date(registeredTimestamp).toUTCString(),
+    });
+
+    const adminText = `New GraceGrid Waitlist Signup:
+Full Name: ${trimmedFullName}
+Email: ${normalizedEmail}
+Role: ${trimmedRole.toUpperCase()}
+Registered At: ${new Date(registeredTimestamp).toUTCString()}
+Total Subscribers: ${totalCount} / ${LAUNCH_TARGET}
+
+Open Admin Dashboard: https://gracegrid.app/gracegrid-admin/dashboard`;
+
+    const welcomeParams = {
+      firstName,
+      FIRSTNAME: firstName,
+      fullName: trimmedFullName,
+      FULLNAME: trimmedFullName,
+      email: normalizedEmail,
+      role: trimmedRole,
+      inviteLink,
+      devPhase,
+      year: new Date().getFullYear(),
     };
 
-    // 12. Prepare Email 2: Admin Notification Email containing subscriber name and email
-    const adminAlertPayload = {
-      sender: {
-        name: brevoSenderName,
-        email: brevoSenderEmail,
-      },
-      to: [
-        {
-          email: adminAlertEmail,
-          name: 'GraceGrid Admin',
-        },
-      ],
-      subject: `🔔 New GraceGrid Waitlist Signup: ${trimmedFullName} (${trimmedRole})`,
-      htmlContent: generateAdminAlertEmailHtml({
-        fullName: trimmedFullName,
-        email: normalizedEmail,
-        role: trimmedRole,
-        totalCount,
-        registeredAt: new Date(registeredTimestamp).toUTCString(),
+    console.log(`[super-task] Dispatching Brevo Welcome Email (To: ${normalizedEmail}) and Admin Alert Email (To: ${adminAlertEmail})...`);
+
+    // 13. Dispatch BOTH emails concurrently via resilient Brevo helper
+    const [welcomeRes, adminRes] = await Promise.allSettled([
+      sendBrevoEmail({
+        apiKey: brevoApiKey,
+        senderName: brevoSenderName,
+        senderEmail: brevoSenderEmail,
+        to: [{ email: normalizedEmail, name: trimmedFullName }],
+        subject: '🕊️ Welcome to GraceGrid — Your Early Access Confirmation',
+        htmlContent: welcomeHtml,
+        textContent: welcomeText,
+        replyTo: { email: adminAlertEmail, name: 'GraceGrid Sanctuary' },
+        templateId,
+        params: welcomeParams,
       }),
-      textContent: `New GraceGrid Waitlist Signup:\nFull Name: ${trimmedFullName}\nEmail: ${normalizedEmail}\nRole: ${trimmedRole}\nRegistered At: ${new Date(registeredTimestamp).toUTCString()}\nTotal Subscribers: ${totalCount} / ${LAUNCH_TARGET}`,
-    };
-
-    console.log(`[super-task] Dispatching Brevo Welcome Email (Template ID: ${templateId}, To: ${normalizedEmail}) and Admin Alert Email (To: ${adminAlertEmail})...`);
-
-    const brevoHeaders = {
-      'accept': 'application/json',
-      'api-key': brevoApiKey,
-      'content-type': 'application/json',
-    };
-
-    // 13. Dispatch BOTH emails concurrently via Brevo Transactional API
-    const [welcomeRes, adminRes] = await Promise.all([
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: brevoHeaders,
-        body: JSON.stringify(welcomeEmailPayload),
-      }),
-      fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: brevoHeaders,
-        body: JSON.stringify(adminAlertPayload),
+      sendBrevoEmail({
+        apiKey: brevoApiKey,
+        senderName: brevoSenderName,
+        senderEmail: brevoSenderEmail,
+        to: [{ email: adminAlertEmail, name: 'GraceGrid Admin' }],
+        subject: `🔔 New GraceGrid Waitlist Signup: ${trimmedFullName} (${trimmedRole.toUpperCase()})`,
+        htmlContent: adminHtml,
+        textContent: adminText,
+        replyTo: { email: normalizedEmail, name: trimmedFullName },
       }),
     ]);
 
-    const welcomeResText = await welcomeRes.text();
-    const adminResText = await adminRes.text();
+    const welcomeResult = welcomeRes.status === 'fulfilled' ? welcomeRes.value : { success: false, status: 500, error: welcomeRes.reason?.message };
+    const adminResult = adminRes.status === 'fulfilled' ? adminRes.value : { success: false, status: 500, error: adminRes.reason?.message };
 
-    console.log(`[super-task] Brevo Welcome Email API Response (HTTP ${welcomeRes.status}):`, welcomeResText);
-    console.log(`[super-task] Brevo Admin Alert Email API Response (HTTP ${adminRes.status}):`, adminResText);
+    console.log(`[super-task] Brevo Welcome Email result:`, welcomeResult);
+    console.log(`[super-task] Brevo Admin Alert Email result:`, adminResult);
 
-    // 14. Error handling & logging for Brevo responses: enforce both emails succeed
-    if (!welcomeRes.ok || !adminRes.ok) {
-      const failures: string[] = [];
-
-      if (!welcomeRes.ok) {
-        console.error(`[super-task] Brevo Welcome Email failed with HTTP ${welcomeRes.status}:`, welcomeResText);
-        failures.push(`Welcome email dispatch failed (${welcomeRes.status}): ${welcomeResText}`);
-      }
-
-      if (!adminRes.ok) {
-        console.error(`[super-task] Brevo Admin Alert Email failed with HTTP ${adminRes.status}:`, adminResText);
-        failures.push(`Admin alert email dispatch failed (${adminRes.status}): ${adminResText}`);
-      }
-
+    // 14. Error handling: check if both failed completely
+    if (!welcomeResult.success && !adminResult.success) {
+      console.error('[super-task] Both Brevo emails failed to dispatch.');
       return jsonResponse(
         {
           success: false,
-          error: `Brevo email automation failure: ${failures.join('; ')}`,
+          error: `Brevo email automation failure: ${welcomeResult.error || 'Welcome email failed'}; ${adminResult.error || 'Admin alert failed'}`,
           details: {
-            welcomeStatus: welcomeRes.status,
-            welcomeError: !welcomeRes.ok ? welcomeResText : null,
-            adminStatus: adminRes.status,
-            adminError: !adminRes.ok ? adminResText : null,
+            welcomeStatus: welcomeResult.status,
+            welcomeError: welcomeResult.error,
+            adminStatus: adminResult.status,
+            adminError: adminResult.error,
           },
         },
         500
       );
     }
 
-    console.log(`[super-task] Both Brevo emails successfully delivered for ${normalizedEmail}.`);
+    console.log(`[super-task] Brevo email automation finished for ${normalizedEmail}. (Welcome: ${welcomeResult.success}, Admin: ${adminResult.success})`);
 
-    // 15. Return JSON success response ONLY after both emails are sent successfully
+    // 15. Return JSON success response
     return jsonResponse(
       {
         success: true,
@@ -440,6 +649,10 @@ Deno.serve(async (req: Request) => {
           email: insertedData.email,
           role: insertedData.role,
           createdAt: insertedData.created_at,
+          emailsDelivered: {
+            welcome: welcomeResult.success,
+            admin: adminResult.success,
+          },
         },
       },
       200

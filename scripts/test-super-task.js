@@ -7,11 +7,12 @@
  * 2. Method validation (POST only)
  * 3. Payload validation (name length, valid email)
  * 4. Duplicate email prevention (409)
- * 5. Supabase secrets reading (BREVO_API_KEY, BREVO_TEMPLATE_ID, BREVO_SENDER_EMAIL)
- * 6. Welcome email dispatch with Brevo template
- * 7. Admin notification email with subscriber name & email
- * 8. Error handling when Brevo fails (returns 500, no false success)
- * 9. Success response (200) only after BOTH emails succeed
+ * 5. Supabase secrets reading (BREVO_API_KEY, BREVO_SENDER_EMAIL, ADMIN_ALERT_EMAIL)
+ * 6. Welcome email dispatch with direct HTML & text fallback (velour-salon pattern)
+ * 7. Admin notification email sent to gracegrid4@gmail.com with subscriber name & email
+ * 8. Resilient template fallback: if templateId is absent or fails, falls back to direct HTML
+ * 9. Error handling when Brevo fails completely (returns 500, no false success)
+ * 10. Success response (200) when emails are successfully dispatched
  */
 
 import assert from 'node:assert/strict';
@@ -61,10 +62,10 @@ async function executeSuperTask({
     SUPABASE_URL: 'https://test-project.supabase.co',
     SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
     BREVO_API_KEY: 'xkeysib-test-api-key',
-    BREVO_TEMPLATE_ID: '1',
-    BREVO_SENDER_EMAIL: 'welcome@gracegrid.app',
+    BREVO_TEMPLATE_ID: '',
+    BREVO_SENDER_EMAIL: 'gracegrid4@gmail.com',
     BREVO_SENDER_NAME: 'GraceGrid Sanctuary',
-    ADMIN_ALERT_EMAIL: 'admin@gracegrid.app',
+    ADMIN_ALERT_EMAIL: 'gracegrid4@gmail.com',
     ...env,
   };
 
@@ -246,16 +247,31 @@ async function main() {
     assert.match(res.data.error, /Brevo API key configuration is missing/);
   });
 
-  await runTest('8. Missing BREVO_TEMPLATE_ID in secrets returns 500 with error', async () => {
+  await runTest('8. Direct HTML email fallback works when BREVO_TEMPLATE_ID is absent (velour-salon pattern)', async () => {
+    const dispatched = [];
+    const mockFetch = async (url, options) => {
+      dispatched.push(JSON.parse(options.body));
+      return new Response(JSON.stringify({ messageId: 'msg_direct_html_123' }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+
     const res = await executeSuperTask({
       method: 'POST',
-      body: { fullName: 'David Sterling', email: 'david@gracegrid.app' },
-      env: { BREVO_TEMPLATE_ID: '0' },
+      body: { fullName: 'Daniel Elijah', email: 'daniel@example.com' },
+      env: { BREVO_TEMPLATE_ID: '' },
+      mockFetch,
     });
 
-    assert.equal(res.status, 500);
-    assert.equal(res.data.success, false);
-    assert.match(res.data.error, /Brevo template ID configuration is missing/);
+    assert.equal(res.status, 200);
+    assert.equal(res.data.success, true);
+    assert.equal(dispatched.length, 2);
+
+    const welcome = dispatched.find((p) => p.to[0].email === 'daniel@example.com');
+    assert.ok(welcome, 'Direct welcome email must be dispatched');
+    assert.match(welcome.subject, /Welcome to GraceGrid/);
+    assert.match(welcome.htmlContent, /Daniel/);
   });
 
   await runTest('9. Brevo email dispatch failure returns 500 and does NOT claim success', async () => {
@@ -277,7 +293,7 @@ async function main() {
     assert.match(res.data.error, /Brevo email automation failure/);
   });
 
-  await runTest('10. Full Success: Dispatches BOTH emails with verified sender and template ID', async () => {
+  await runTest('10. Full Success: Dispatches BOTH subscriber welcome & admin notification to gracegrid4@gmail.com', async () => {
     const dispatchedEmails = [];
 
     const mockFetch = async (url, options) => {
@@ -300,10 +316,9 @@ async function main() {
       body: { fullName: 'Praise Victor', email: 'praise@example.com', role: 'leader' },
       env: {
         BREVO_API_KEY: 'xkeysib-live-key',
-        BREVO_TEMPLATE_ID: '3',
-        BREVO_SENDER_EMAIL: 'welcome@gracegrid.app',
+        BREVO_SENDER_EMAIL: 'gracegrid4@gmail.com',
         BREVO_SENDER_NAME: 'GraceGrid Sanctuary',
-        ADMIN_ALERT_EMAIL: 'admin@gracegrid.app',
+        ADMIN_ALERT_EMAIL: 'gracegrid4@gmail.com',
       },
       mockFetch,
     });
@@ -318,23 +333,20 @@ async function main() {
     // Verify exactly TWO emails were sent
     assert.equal(dispatchedEmails.length, 2);
 
-    // Verify Email 1: Welcome Email
-    const welcomeEmail = dispatchedEmails.find((e) => e.payload.templateId !== undefined);
-    assert.ok(welcomeEmail, 'Welcome email with templateId must be sent');
-    assert.equal(welcomeEmail.payload.templateId, 3);
+    // Verify Email 1: Welcome Email to Subscriber
+    const welcomeEmail = dispatchedEmails.find((e) => e.payload.to[0].email === 'praise@example.com');
+    assert.ok(welcomeEmail, 'Welcome email must be sent to subscriber');
     assert.equal(welcomeEmail.payload.to[0].email, 'praise@example.com');
-    assert.equal(welcomeEmail.payload.sender.email, 'welcome@gracegrid.app');
-    assert.equal(welcomeEmail.payload.params.firstName, 'Praise');
-    assert.equal(welcomeEmail.payload.params.fullName, 'Praise Victor');
-    assert.equal(welcomeEmail.payload.params.role, 'leader');
+    assert.equal(welcomeEmail.payload.sender.email, 'gracegrid4@gmail.com');
+    assert.match(welcomeEmail.payload.subject, /Welcome to GraceGrid/);
+    assert.match(welcomeEmail.payload.htmlContent, /Praise/);
+    assert.match(welcomeEmail.payload.textContent, /Praise/);
 
-    // Verify Email 2: Admin Alert Email
-    const adminAlert = dispatchedEmails.find(
-      (e) => e.payload.subject?.includes('Admin') || e.payload.to[0].email === 'admin@gracegrid.app'
-    );
-    assert.ok(adminAlert, 'Admin alert email must be sent');
-    assert.equal(adminAlert.payload.to[0].email, 'admin@gracegrid.app');
-    assert.equal(adminAlert.payload.sender.email, 'welcome@gracegrid.app');
+    // Verify Email 2: Admin Alert Email to gracegrid4@gmail.com
+    const adminAlert = dispatchedEmails.find((e) => e.payload.to[0].email === 'gracegrid4@gmail.com');
+    assert.ok(adminAlert, 'Admin alert email must be sent to gracegrid4@gmail.com');
+    assert.equal(adminAlert.payload.to[0].email, 'gracegrid4@gmail.com');
+    assert.equal(adminAlert.payload.sender.email, 'gracegrid4@gmail.com');
     assert.match(adminAlert.payload.subject, /Praise Victor/);
     assert.match(adminAlert.payload.htmlContent, /Praise Victor/);
     assert.match(adminAlert.payload.htmlContent, /praise@example\.com/);
