@@ -1,45 +1,29 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useCallback, memo } from 'react';
 import Badge from '../components/Badge';
-import Button from '../components/Button';
 import { LeafPattern } from '../components/DecorativeAssets';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import { 
   ShieldCheck, 
-  Copy, 
-  Check, 
-  Building2, 
-  UserCheck, 
   Heart, 
   Sparkles,
+  ExternalLink,
+  CreditCard,
+  Building2,
+  Zap,
   Lock
 } from 'lucide-react';
 import './SupportMissionSection.css';
 
 export const SupportMissionSection = memo(function SupportMissionSection({ onShowToast }) {
-  const [copied, setCopied] = useState(false);
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.15 });
 
-  const bankDetails = {
-    bankName: 'PalmPay',
-    accountName: 'PRAISE VICTOR EGBAUNU',
-    accountNumber: '7084027105',
-    formattedAccountNumber: '7084 027 105',
-  };
+  const paystackUrl = import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid';
 
-  const handleCopyAccountNumber = useCallback(() => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(bankDetails.accountNumber).then(() => {
-        setCopied(true);
-        if (onShowToast) {
-          onShowToast('Account number copied to clipboard! Thank you for supporting the mission.', 'success');
-        }
-        setTimeout(() => setCopied(false), 3500);
-      }).catch(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 3500);
-      });
+  const handleGiveViaPaystack = useCallback(() => {
+    if (onShowToast) {
+      onShowToast('Redirecting to secure Paystack giving checkout...', 'info');
     }
-  }, [bankDetails.accountNumber, onShowToast]);
+  }, [onShowToast]);
 
   return (
     <section 
@@ -70,54 +54,52 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
             </p>
           </div>
 
-          {/* Direct Bank Transfer Box */}
-          <div className="support-bank-card" role="region" aria-label="Official Bank Details">
+          {/* Paystack Online Giving Box */}
+          <div className="support-bank-card paystack-card" role="region" aria-label="Official Paystack Giving Channel">
             <div className="bank-card-badge-row">
-              <span className="bank-transfer-type-tag">
-                <Building2 size={14} aria-hidden="true" /> Direct Bank Transfer
+              <span className="bank-transfer-type-tag paystack-tag">
+                <ShieldCheck size={14} aria-hidden="true" /> Secured by Paystack
               </span>
-              <span className="currency-badge">NGN / International Wire</span>
+              <span className="currency-badge">NGN · USD · International Cards</span>
             </div>
 
-            <div className="bank-details-grid">
-              {/* Bank Name */}
-              <div className="bank-detail-item">
-                <span className="bank-detail-label">Bank Name</span>
-                <span className="bank-detail-value bank-name-text">
-                  <Building2 size={16} className="detail-icon" aria-hidden="true" />
-                  {bankDetails.bankName}
+            <div className="paystack-cta-content">
+              <div className="paystack-info-group">
+                <h3 className="paystack-headline">Online Kingdom Giving</h3>
+                <p className="paystack-subtext">
+                  Give securely via debit/credit card, direct bank transfer, USSD, or Apple Pay. All contributions are audited and directly allocated toward server infrastructure, high-fidelity streaming, and sanctuary development.
+                </p>
+              </div>
+
+              <div className="paystack-channels-row" aria-label="Supported payment channels">
+                <span className="channel-pill">
+                  <CreditCard size={13} aria-hidden="true" /> Cards
+                </span>
+                <span className="channel-pill">
+                  <Building2 size={13} aria-hidden="true" /> Bank Transfer
+                </span>
+                <span className="channel-pill">
+                  <Zap size={13} aria-hidden="true" /> USSD
+                </span>
+                <span className="channel-pill">
+                  <Lock size={13} aria-hidden="true" /> 256-bit Encrypted
                 </span>
               </div>
 
-              {/* Account Name */}
-              <div className="bank-detail-item">
-                <span className="bank-detail-label">Account Name</span>
-                <span className="bank-detail-value account-name-text">
-                  <UserCheck size={16} className="detail-icon" aria-hidden="true" />
-                  {bankDetails.accountName}
-                </span>
+              <div className="paystack-action-hero">
+                <a
+                  href={paystackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleGiveViaPaystack}
+                  className="btn-paystack-give"
+                  aria-label="Give securely via Paystack"
+                >
+                  <Heart size={18} className="heart-give-icon" aria-hidden="true" />
+                  <span>Give via Paystack</span>
+                  <ExternalLink size={16} className="external-link-icon" aria-hidden="true" />
+                </a>
               </div>
-            </div>
-
-            {/* Account Number Display */}
-            <div className="account-number-hero-box">
-              <div className="account-number-meta">
-                <span className="account-number-label">Official Account Number</span>
-                <div className="account-number-display" aria-label={`Account Number: ${bankDetails.accountNumber}`}>
-                  {bankDetails.formattedAccountNumber}
-                </div>
-              </div>
-
-              <Button
-                variant={copied ? 'secondary' : 'primary'}
-                size="md"
-                onClick={handleCopyAccountNumber}
-                leftIcon={copied ? <Check size={17} /> : <Copy size={17} />}
-                className="btn-copy-account"
-                ariaLabel={copied ? 'Account number copied' : 'Copy account number to clipboard'}
-              >
-                {copied ? 'Copied to Clipboard!' : 'Copy Account Number'}
-              </Button>
             </div>
 
             {/* Security Guarantee with Shield Icon */}
@@ -126,9 +108,9 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                 <ShieldCheck size={20} className="shield-icon-green" />
               </div>
               <div className="security-text-group">
-                <span className="security-title">Verified & Secure Bank Transfer</span>
+                <span className="security-title">Verified & PCI-DSS Level 1 Certified</span>
                 <span className="security-desc">
-                  This is the official GraceGrid dedicated treasury account. All contributions are audited and directly allocated toward server infrastructure and technology development.
+                  Payments are processed directly by Paystack under banking-grade 256-bit SSL encryption. GraceGrid never stores your card details or financial information.
                 </span>
               </div>
             </div>

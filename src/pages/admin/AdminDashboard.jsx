@@ -43,6 +43,7 @@ import {
   Radio,
   Building2,
   Trash2,
+  CreditCard,
   Edit2,
   CheckCircle2,
   AlertCircle,
@@ -1175,24 +1176,26 @@ export default function AdminDashboard() {
           {activeTab === 'treasury' && (
             <div className="treasury-card glass-card-dark">
               <div className="treasury-header">
-                <Building2 size={24} className="treasury-gold-icon" />
+                <CreditCard size={24} className="treasury-gold-icon" />
                 <div>
-                  <h2 className="treasury-title">Stewardship Bank Account Reference</h2>
-                  <p className="treasury-desc">Official GraceGrid treasury details displayed to donors on the public site.</p>
+                  <h2 className="treasury-title">Stewardship & Payment Gateway (Paystack)</h2>
+                  <p className="treasury-desc">Configured Paystack gateway details for online kingdom giving.</p>
                 </div>
               </div>
               <div className="treasury-grid">
                 <div className="treasury-item">
-                  <span className="treasury-item-label">Bank Name</span>
-                  <span className="treasury-item-val">PalmPay</span>
+                  <span className="treasury-item-label">Payment Gateway</span>
+                  <span className="treasury-item-val">Paystack</span>
                 </div>
                 <div className="treasury-item">
-                  <span className="treasury-item-label">Account Name</span>
-                  <span className="treasury-item-val">PRAISE VICTOR EGBAUNU</span>
+                  <span className="treasury-item-label">Supported Channels</span>
+                  <span className="treasury-item-val">Cards · Bank Transfer · USSD · Apple Pay</span>
                 </div>
                 <div className="treasury-item">
-                  <span className="treasury-item-label">Account Number</span>
-                  <span className="treasury-item-val highlight-number">7084027105 (7084 027 105)</span>
+                  <span className="treasury-item-label">Giving Page Link</span>
+                  <span className="treasury-item-val highlight-number">
+                    {import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid'}
+                  </span>
                 </div>
               </div>
             </div>
