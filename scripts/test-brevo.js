@@ -27,9 +27,9 @@ const args = process.argv.slice(2).reduce((acc, curr) => {
   return acc;
 }, {});
 
-// Load from .env.local or .env if exists
+// Load from .env.local, .env, or supabase/.env.real if exists
 let envFileVars = {};
-for (const envPath of ['.env.local', '.env']) {
+for (const envPath of ['.env.local', '.env', 'supabase/.env.real']) {
   const fullPath = resolve(process.cwd(), envPath);
   if (existsSync(fullPath)) {
     const content = readFileSync(fullPath, 'utf8');
@@ -47,8 +47,8 @@ for (const envPath of ['.env.local', '.env']) {
 
 const apiKey = args['api-key'] || process.env.BREVO_API_KEY || envFileVars.BREVO_API_KEY;
 const listIdStr = args['list-id'] || process.env.BREVO_LIST_ID || envFileVars.BREVO_LIST_ID;
-const testEmail = args['email'] || args['test-email'] || process.env.TEST_EMAIL || envFileVars.TEST_EMAIL || envFileVars.VITE_ADMIN_EMAIL;
-const senderEmail = args['sender-email'] || process.env.BREVO_SENDER_EMAIL || envFileVars.BREVO_SENDER_EMAIL || 'welcome@gracegrid.app';
+const testEmail = args['email'] || args['test-email'] || process.env.TEST_EMAIL || envFileVars.TEST_EMAIL || envFileVars.ADMIN_NOTIFICATION_EMAIL || envFileVars.VITE_ADMIN_EMAIL;
+const senderEmail = args['sender-email'] || process.env.BREVO_SENDER_EMAIL || envFileVars.BREVO_SENDER_EMAIL || 'gracegrid4@gmail.com';
 const senderName = args['sender-name'] || process.env.BREVO_SENDER_NAME || envFileVars.BREVO_SENDER_NAME || 'GraceGrid Sanctuary';
 
 console.log('\n🕊️  GraceGrid — Complete Email Automation Test Suite');
