@@ -280,12 +280,6 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
               </div>
             </div>
 
-            <div className="transparency-guarantee">
-              <CheckCircle2 size={16} className="guarantee-check-icon" aria-hidden="true" />
-              <span>
-                Zero administrative cuts or platform fees taken. 100% of proceeds go directly to these two milestone requirements.
-              </span>
-            </div>
           </div>
 
           {/* Scripture Benediction */}

@@ -536,24 +536,6 @@
   letter-spacing: 0.06em;
 }
 
-.transparency-guarantee {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  font-size: 0.825rem;
-  line-height: 1.45;
-  color: #166534;
-  background: rgba(220, 252, 231, 0.55);
-  border: 1px solid rgba(22, 163, 74, 0.25);
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-}
-
-.guarantee-check-icon {
-  color: #16A34A;
-  flex-shrink: 0;
-}
-
 /* ==============================================================================
    Scripture Benediction Footer
    ============================================================================== */
