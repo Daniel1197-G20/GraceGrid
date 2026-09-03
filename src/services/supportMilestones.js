@@ -16,7 +16,7 @@ export const DEFAULT_CAMPAIGN_MILESTONES = [
     badgeText: 'Milestone 1',
     icon: Globe,
     target: 10000,
-    raised: 6500,
+    raised: 0,
     description: 'Securing our permanent official gracegrid.com domain and dedicated SSL encryption for global fellowship, worship streaming, and community access.',
     displayOrder: 1,
   },
@@ -26,13 +26,13 @@ export const DEFAULT_CAMPAIGN_MILESTONES = [
     badgeText: 'Milestone 2',
     icon: Smartphone,
     target: 37000,
-    raised: 14500,
+    raised: 0,
     description: 'Acquiring the Google Play Console developer license to publish and distribute the GraceGrid Android sanctuary app directly to believers worldwide.',
     displayOrder: 2,
   },
 ];
 
-const CACHE_KEY = 'gracegrid_cached_milestones';
+const CACHE_KEY = 'gracegrid_cached_milestones_v2';
 const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 
 let inMemoryMilestones = null;
@@ -79,9 +79,20 @@ export function setCachedMilestones(milestones) {
  * Get cached milestones from memory or sessionStorage
  */
 export function getCachedMilestones() {
+  // Purge legacy mock cache if present
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      sessionStorage.removeItem('gracegrid_cached_milestones');
+    }
+  } catch (_) {}
+
   const now = Date.now();
   if (inMemoryMilestones && (now - inMemoryTimestamp < CACHE_TTL_MS)) {
-    return inMemoryMilestones;
+    // If memory cache still has old mock values (6500 or 14500), bust it
+    const hasMock = inMemoryMilestones.some((m) => (m.id === 'domain' && m.raised === 6500) || (m.id === 'playstore' && m.raised === 14500));
+    if (!hasMock) {
+      return inMemoryMilestones;
+    }
   }
 
   try {
@@ -89,10 +100,14 @@ export function getCachedMilestones() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed && Array.isArray(parsed.data) && parsed.data.length > 0) {
-        const normalized = parsed.data.map(normalizeMilestone);
-        inMemoryMilestones = normalized;
-        inMemoryTimestamp = parsed.time || now;
-        return normalized;
+        // Discard if containing legacy mock values
+        const hasMock = parsed.data.some((m) => (m.id === 'domain' && m.raised === 6500) || (m.id === 'playstore' && m.raised === 14500));
+        if (!hasMock) {
+          const normalized = parsed.data.map(normalizeMilestone);
+          inMemoryMilestones = normalized;
+          inMemoryTimestamp = parsed.time || now;
+          return normalized;
+        }
       }
     }
   } catch (_) {}

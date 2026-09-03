@@ -386,7 +386,10 @@ export const SupportMissionSection = memo(function SupportMissionSection({
                     >
                       <div 
                         className="campaign-mini-fill"
-                        style={{ width: hasAnimated ? `${percentage}%` : '0%' }}
+                        style={{ 
+                          width: hasAnimated ? `${percentage}%` : '0%',
+                          opacity: hasAnimated && percentage > 0 ? 1 : 0
+                        }}
                       >
                         <div className="campaign-mini-shimmer" />
                       </div>
