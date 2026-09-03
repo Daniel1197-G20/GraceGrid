@@ -32,6 +32,36 @@ interface WaitlistPayload {
   full_name?: string;
   email?: string;
   role?: string;
+  website?: string;
+  bot_field?: string;
+}
+
+function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// In-memory IP rate limiter: max 10 submissions per 60s per client IP
+const ipRequestCounts = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  if (!ip || ip === 'unknown') return true;
+  const now = Date.now();
+  const record = ipRequestCounts.get(ip);
+  if (!record || now > record.resetAt) {
+    ipRequestCounts.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (record.count >= 10) {
+    return false;
+  }
+  record.count += 1;
+  return true;
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -59,6 +89,12 @@ function generateWelcomeEmailHtml({
   devPhase: string;
   inviteLink: string;
 }): string {
+  const safeFirstName = escapeHtml(firstName);
+  const safeEmail = escapeHtml(normalizedEmail);
+  const safeRole = escapeHtml(trimmedRole).toUpperCase();
+  const safePhase = escapeHtml(devPhase);
+  const safeInviteLink = encodeURI(inviteLink);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,17 +121,17 @@ function generateWelcomeEmailHtml({
   <div class="wrapper">
     <div class="header">
       <div class="cross">🕊️</div>
-      <div class="badge">${devPhase}</div>
+      <div class="badge">${safePhase}</div>
       <h1 class="title">Welcome to GraceGrid</h1>
     </div>
     <div class="body-content">
-      <p>Grace and peace to you, <strong>${firstName}</strong>,</p>
+      <p>Grace and peace to you, <strong>${safeFirstName}</strong>,</p>
       <p>Thank you for stepping into the early access waitlist for <strong>GraceGrid</strong> — a dedicated digital sanctuary built for prayer, live worship, and biblical fellowship free from secular distractions.</p>
       
       <div class="card-highlight">
         <div class="highlight-item">
           <span class="highlight-label">Community Role:</span>
-          <span class="highlight-val">${trimmedRole.toUpperCase()}</span>
+          <span class="highlight-val">${safeRole}</span>
         </div>
         <div class="highlight-item">
           <span class="highlight-label">Waitlist Status:</span>
@@ -107,13 +143,13 @@ function generateWelcomeEmailHtml({
         </div>
       </div>
 
-      <p>We are actively preparing this sanctuary. You will receive exclusive project development updates directly to <code>${normalizedEmail}</code> as we roll out closed beta invites and new scripture rooms.</p>
+      <p>We are actively preparing this sanctuary. You will receive exclusive project development updates directly to <code>${safeEmail}</code> as we roll out closed beta invites and new scripture rooms.</p>
 
-      <a href="${inviteLink}" class="btn">Share Your Fellowship Invite Link</a>
+      <a href="${safeInviteLink}" class="btn">Share Your Fellowship Invite Link</a>
 
       <p style="font-size: 14px; color: #86efac; text-align: center;">
         Your invite link: <br>
-        <span style="color: #fef08a; word-break: break-all;">${inviteLink}</span>
+        <span style="color: #fef08a; word-break: break-all;">${safeInviteLink}</span>
       </p>
     </div>
     <div class="footer">
@@ -138,6 +174,10 @@ function generateAdminAlertEmailHtml({
   totalCount: number;
   registeredAt: string;
 }): string {
+  const safeFullName = escapeHtml(fullName);
+  const safeEmail = escapeHtml(email);
+  const safeRole = escapeHtml(role).toUpperCase();
+  const safeRegisteredAt = escapeHtml(registeredAt);
   const percent = Math.min(100, Math.round((totalCount / LAUNCH_TARGET) * 100));
   const remaining = Math.max(0, LAUNCH_TARGET - totalCount);
 
@@ -178,19 +218,19 @@ function generateAdminAlertEmailHtml({
       <div class="meta-box">
         <div class="meta-row">
           <span class="meta-lbl">Full Name:</span>
-          <span class="meta-val">${fullName}</span>
+          <span class="meta-val">${safeFullName}</span>
         </div>
         <div class="meta-row">
           <span class="meta-lbl">Email:</span>
-          <span class="meta-val">${email}</span>
+          <span class="meta-val">${safeEmail}</span>
         </div>
         <div class="meta-row">
           <span class="meta-lbl">Community Role:</span>
-          <span class="meta-val" style="color: #fef08a;">${role.toUpperCase()}</span>
+          <span class="meta-val" style="color: #fef08a;">${safeRole}</span>
         </div>
         <div class="meta-row">
           <span class="meta-lbl">Timestamp:</span>
-          <span class="meta-val">${registeredAt}</span>
+          <span class="meta-val">${safeRegisteredAt}</span>
         </div>
       </div>
 
@@ -203,7 +243,8 @@ function generateAdminAlertEmailHtml({
       <a href="https://gracegrid.app/gracegrid-admin/dashboard" class="btn">Open Admin Dashboard</a>
     </div>
     <div class="footer">
-      <p>GraceGrid Automated Sentinel &bull; PostgreSQL Row-Level Security Protected</p>
+      <p>© ${new Date().getFullYear()} GraceGrid Sanctuary Sentinel</p>
+      <p>Protected by Supabase PostgreSQL & Row-Level Security</p>
     </div>
   </div>
 </body>
@@ -341,7 +382,20 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // 3. Parse JSON request body safely
+    // 3. Client IP Rate Limiting (max 10 requests per minute)
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+                     req.headers.get('cf-connecting-ip') ||
+                     req.headers.get('x-real-ip') ||
+                     'unknown';
+
+    if (!checkRateLimit(clientIp)) {
+      return jsonResponse(
+        { success: false, error: 'Too many requests. Please wait a minute and try again.' },
+        429
+      );
+    }
+
+    // 4. Parse JSON request body safely
     let payload: WaitlistPayload;
     try {
       payload = await req.json();
@@ -352,23 +406,36 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // 5. Bot Honeypot Trap (silently acknowledge without DB insert or sending emails)
+    if (payload.website || payload.bot_field) {
+      return jsonResponse({
+        success: true,
+        message: 'Registration received.',
+        subscriber: { id: 'filtered', email: '', role: 'believer', position: LAUNCH_TARGET },
+      });
+    }
+
     const rawFullName = payload.fullName ?? payload.full_name ?? '';
     const rawEmail = payload.email ?? '';
     const rawRole = payload.role ?? 'believer';
 
     const trimmedFullName = String(rawFullName).trim();
     const normalizedEmail = String(rawEmail).trim().toLowerCase();
-    const trimmedRole = String(rawRole).trim() || 'believer';
+    const rawRoleStr = String(rawRole).trim().toLowerCase();
 
-    // 4. Validate payload inputs (HTTP 400 for invalid payloads)
-    if (!trimmedFullName || trimmedFullName.length < 2) {
+    // Whitelist role
+    const VALID_ROLES = ['believer', 'pastor', 'leader', 'group', 'student', 'fellowship'];
+    const trimmedRole = VALID_ROLES.includes(rawRoleStr) ? rawRoleStr : 'believer';
+
+    // 6. Validate payload inputs (HTTP 400 for invalid payloads)
+    if (!trimmedFullName || trimmedFullName.length < 2 || trimmedFullName.length > 100) {
       return jsonResponse(
-        { success: false, error: 'Full name must be at least 2 characters.' },
+        { success: false, error: 'Full name must be between 2 and 100 characters.' },
         400
       );
     }
 
-    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
+    if (!normalizedEmail || normalizedEmail.length > 255 || !EMAIL_REGEX.test(normalizedEmail)) {
       return jsonResponse(
         { success: false, error: 'Please provide a valid email address.' },
         400

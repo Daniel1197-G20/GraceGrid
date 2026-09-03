@@ -119,7 +119,11 @@ export function exportWaitlistToCSV(subscribers = []) {
   }
 
   const escapeCSV = (value) => {
-    const stringVal = String(value ?? '');
+    let stringVal = String(value ?? '');
+    // Neutralize spreadsheet formula injection (CWE-1236)
+    if (/^[=\+\-@\t\r]/.test(stringVal)) {
+      stringVal = `'${stringVal}`;
+    }
     if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
       return `"${stringVal.replace(/"/g, '""')}"`;
     }

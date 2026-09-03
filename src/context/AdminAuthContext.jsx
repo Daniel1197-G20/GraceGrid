@@ -12,9 +12,8 @@ export function AdminAuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [authProvider, setAuthProvider] = useState('none'); // 'supabase' | 'env' | 'none'
 
-  // Read environment configured credentials with sensible defaults for MVP
+  // Read environment configured admin email for UI placeholder & contact
   const configuredEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'gracegrid4@gmail.com').trim().toLowerCase();
-  const configuredPassword = (import.meta.env.VITE_ADMIN_PASSWORD || 'gracegrid2026').trim();
 
   // Initialize session from Supabase Auth or Local/Session Storage
   useEffect(() => {
@@ -181,40 +180,42 @@ export function AdminAuthProvider({ children }) {
       }
     }
 
-    // 2. Offline Fallback ONLY when Supabase credentials are missing entirely
+    // 2. Offline Fallback ONLY during local development (import.meta.env.DEV) when Supabase is unconfigured
     if (!isSupabaseConfigured) {
-      const isEnvEmailValid = inputEmail === configuredEmail || inputEmail === 'admin@gracegrid.app';
-      const isEnvPasswordValid = inputPassword === configuredPassword;
+      if (import.meta.env.DEV) {
+        const isEnvEmailValid = inputEmail === configuredEmail || inputEmail === 'admin@gracegrid.app';
 
-      if (isEnvEmailValid && isEnvPasswordValid) {
-        const sessionData = {
-          email: inputEmail,
-          name: 'GraceGrid Administrator (Offline)',
-          role: 'Super Admin',
-          authType: 'Offline Local Dev',
-          authProvider: 'env',
-          authenticatedAt: new Date().toISOString(),
-          expiresAt: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
-        };
+        if (isEnvEmailValid && inputPassword.length >= 6) {
+          const sessionData = {
+            email: inputEmail,
+            name: 'GraceGrid Administrator (Local Dev)',
+            role: 'Super Admin',
+            authType: 'Offline Local Dev',
+            authProvider: 'env',
+            authenticatedAt: new Date().toISOString(),
+            expiresAt: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
+          };
 
-        if (remember) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-          sessionStorage.removeItem(STORAGE_KEY);
-        } else {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-          localStorage.removeItem(STORAGE_KEY);
+          if (remember) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+            sessionStorage.removeItem(STORAGE_KEY);
+          } else {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+            localStorage.removeItem(STORAGE_KEY);
+          }
+
+          setIsAuthenticated(true);
+          setAuthProvider('env');
+          setAdminUser(sessionData);
+
+          return { success: true, provider: 'env' };
         }
-
-        setIsAuthenticated(true);
-        setAuthProvider('env');
-        setAdminUser(sessionData);
-
-        return { success: true, provider: 'env' };
       }
+      throw new Error('Supabase is not configured and offline access is restricted to local development.');
     }
 
     throw new Error('Invalid administrative credentials. Please verify your email and password.');
-  }, [configuredEmail, configuredPassword]);
+  }, [configuredEmail]);
 
   // Logout action
   const logout = useCallback(async () => {

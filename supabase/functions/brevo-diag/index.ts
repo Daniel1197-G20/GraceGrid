@@ -1,6 +1,17 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 serve(async (req: Request) => {
+  // Enforce administrative authorization
+  const adminKey = Deno.env.get('ADMIN_API_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const providedKey = req.headers.get('x-admin-key') || req.headers.get('authorization')?.replace('Bearer ', '');
+
+  if (!adminKey || !providedKey || providedKey !== adminKey) {
+    return new Response(JSON.stringify({ success: false, error: 'Unauthorized. Admin authorization required.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const brevoApiKey = Deno.env.get('BREVO_API_KEY') || '';
 
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {

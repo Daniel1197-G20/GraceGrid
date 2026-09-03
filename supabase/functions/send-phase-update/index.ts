@@ -37,6 +37,16 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   });
 }
 
+function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function generatePhaseUpdateHtml({
   recipientName,
   phaseName,
@@ -54,12 +64,19 @@ function generatePhaseUpdateHtml({
   ctaText: string;
   ctaUrl: string;
 }): string {
+  const safeRecipientName = escapeHtml(recipientName);
+  const safePhaseName = escapeHtml(phaseName);
+  const safeHeadline = escapeHtml(headline);
+  const safeMessage = escapeHtml(message);
+  const safeCtaText = escapeHtml(ctaText);
+  const safeCtaUrl = encodeURI(ctaUrl);
+
   const highlightsHtml = highlights && highlights.length > 0
     ? `
       <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(22, 163, 74, 0.3); border-radius: 12px; padding: 20px; margin: 24px 0;">
         <h3 style="margin: 0 0 12px; font-size: 15px; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px;">Phase Accomplishments</h3>
         <ul style="margin: 0; padding-left: 20px; color: #f0fdf4;">
-          ${highlights.map((h) => `<li style="margin-bottom: 8px;">${h}</li>`).join('')}
+          ${highlights.map((h) => `<li style="margin-bottom: 8px;">${escapeHtml(h)}</li>`).join('')}
         </ul>
       </div>
     `
@@ -88,16 +105,16 @@ function generatePhaseUpdateHtml({
   <div class="wrapper">
     <div class="header">
       <div class="cross">🕊️</div>
-      <div class="badge">${phaseName}</div>
-      <h1 class="title">${headline}</h1>
+      <div class="badge">${safePhaseName}</div>
+      <h1 class="title">${safeHeadline}</h1>
     </div>
     <div class="body-content">
-      <p>Grace and peace to you, <strong>${recipientName}</strong>,</p>
-      <p>${message}</p>
+      <p>Grace and peace to you, <strong>${safeRecipientName}</strong>,</p>
+      <p>${safeMessage}</p>
       
       ${highlightsHtml}
 
-      <a href="${ctaUrl}" class="btn">${ctaText}</a>
+      <a href="${safeCtaUrl}" class="btn">${safeCtaText}</a>
     </div>
     <div class="footer">
       <p>© ${new Date().getFullYear()} GraceGrid. Building a sacred digital sanctuary for the body of Christ.</p>
