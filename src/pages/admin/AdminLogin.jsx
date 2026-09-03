@@ -209,12 +209,12 @@ export default function AdminLogin() {
 
         </div>
 
-        {/* Quick Help / Default Credentials Note for Easy Access */}
+        {/* Quick Help / Supabase Auth Info */}
         <div className="admin-help-box">
           <p className="admin-help-text">
-            <span>Default Login:</span> <code>{configuredEmail}</code> / <code>gracegrid2026</code>
+            <span>Admin Portal:</span> <code>{configuredEmail}</code>
             <br />
-            <span className="help-env-hint">(Configurable via <code>VITE_ADMIN_EMAIL</code> & <code>VITE_ADMIN_PASSWORD</code> in <code>.env.local</code>)</span>
+            <span className="help-env-hint">Protected by Supabase Real Auth (GoTrue &bull; JWT Session)</span>
           </p>
         </div>
 

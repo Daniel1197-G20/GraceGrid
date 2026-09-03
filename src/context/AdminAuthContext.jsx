@@ -114,96 +114,103 @@ export function AdminAuthProvider({ children }) {
     };
   }, [configuredEmail]);
 
-  // Login action: Attempts Supabase Auth first, then falls back to configured env credentials
+  // Login action: Authenticates strictly via real Supabase Auth
   const login = useCallback(async ({ email, password, remember = false }) => {
-    const inputEmail = String(email || '').trim().toLowerCase();
+    let inputEmail = String(email || '').trim().toLowerCase();
     const inputPassword = String(password || '').trim();
 
-    let supabaseAuthSuccess = false;
-    let supabaseAuthError = null;
-
-    // 1. Try Supabase Auth if client is configured
-    if (isSupabaseConfigured && inputEmail.includes('@')) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: inputEmail,
-          password: inputPassword,
-        });
-
-        if (!error && data?.user) {
-          supabaseAuthSuccess = true;
-          setIsAuthenticated(true);
-          setAuthProvider('supabase');
-          const userData = {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.user_metadata?.full_name || 'GraceGrid Administrator',
-            role: data.user.user_metadata?.role || 'Super Admin',
-            authType: 'Supabase Auth',
-            authenticatedAt: new Date().toISOString(),
-          };
-          setAdminUser(userData);
-
-          const sessionData = {
-            ...userData,
-            authProvider: 'supabase',
-            expiresAt: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
-          };
-
-          if (remember) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-          } else {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-          }
-
-          return { success: true, provider: 'supabase' };
-        } else {
-          supabaseAuthError = error;
-        }
-      } catch (err) {
-        supabaseAuthError = err;
-      }
+    if (!inputEmail) {
+      throw new Error('Please enter your admin email address.');
     }
 
-    // 2. Fallback: Check against configured environment credentials
-    const isEnvEmailValid = inputEmail === configuredEmail || inputEmail === 'admin' || inputEmail === 'gracegrid4@gmail.com' || inputEmail === 'admin@gracegrid.app';
-    const isEnvPasswordValid = inputPassword === configuredPassword;
+    // Convenience shorthand: if user types "admin", map to the admin email
+    if (inputEmail === 'admin') {
+      inputEmail = configuredEmail;
+    }
 
-    if (isEnvEmailValid && isEnvPasswordValid) {
-      const sessionData = {
-        email: inputEmail.includes('@') ? inputEmail : configuredEmail,
-        name: 'GraceGrid Administrator',
-        role: 'Super Admin',
-        authType: 'Environment MVP',
-        authProvider: 'env',
-        authenticatedAt: new Date().toISOString(),
-        expiresAt: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
-      };
+    if (!inputEmail.includes('@')) {
+      throw new Error('Please enter a valid administrative email address.');
+    }
 
-      if (remember) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-        sessionStorage.removeItem(STORAGE_KEY);
-      } else {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    if (!inputPassword) {
+      throw new Error('Please enter your administrator password.');
+    }
 
-      setIsAuthenticated(true);
-      setAuthProvider('env');
-      setAdminUser({
-        email: sessionData.email,
-        name: sessionData.name,
-        role: sessionData.role,
-        authType: sessionData.authType,
-        authenticatedAt: sessionData.authenticatedAt,
+    // 1. Real Supabase Auth (GoTrue)
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: inputEmail,
+        password: inputPassword,
       });
 
-      return { success: true, provider: 'env' };
+      if (error) {
+        if (error.message && error.message.toLowerCase().includes('invalid login credentials')) {
+          throw new Error('Invalid email or password. Please verify your Supabase admin credentials.');
+        }
+        throw new Error(error.message || 'Supabase authentication failed. Please try again.');
+      }
+
+      if (data?.user) {
+        setIsAuthenticated(true);
+        setAuthProvider('supabase');
+        const userData = {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name || 'GraceGrid Administrator',
+          role: data.user.user_metadata?.role || 'Super Admin',
+          authType: 'Supabase Real Auth',
+          authenticatedAt: new Date().toISOString(),
+        };
+        setAdminUser(userData);
+
+        const sessionData = {
+          ...userData,
+          authProvider: 'supabase',
+          expiresAt: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
+        };
+
+        if (remember) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+          sessionStorage.removeItem(STORAGE_KEY);
+        } else {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+          localStorage.removeItem(STORAGE_KEY);
+        }
+
+        return { success: true, provider: 'supabase' };
+      }
     }
 
-    // If both failed, throw error with helpful context
-    if (supabaseAuthError && !isEnvPasswordValid) {
-      throw new Error(supabaseAuthError.message || 'Invalid administrative credentials. Please verify your email and password.');
+    // 2. Offline Fallback ONLY when Supabase credentials are missing entirely
+    if (!isSupabaseConfigured) {
+      const isEnvEmailValid = inputEmail === configuredEmail || inputEmail === 'admin@gracegrid.app';
+      const isEnvPasswordValid = inputPassword === configuredPassword;
+
+      if (isEnvEmailValid && isEnvPasswordValid) {
+        const sessionData = {
+          email: inputEmail,
+          name: 'GraceGrid Administrator (Offline)',
+          role: 'Super Admin',
+          authType: 'Offline Local Dev',
+          authProvider: 'env',
+          authenticatedAt: new Date().toISOString(),
+          expiresAt: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000),
+        };
+
+        if (remember) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+          sessionStorage.removeItem(STORAGE_KEY);
+        } else {
+          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+          localStorage.removeItem(STORAGE_KEY);
+        }
+
+        setIsAuthenticated(true);
+        setAuthProvider('env');
+        setAdminUser(sessionData);
+
+        return { success: true, provider: 'env' };
+      }
     }
 
     throw new Error('Invalid administrative credentials. Please verify your email and password.');
