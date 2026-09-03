@@ -119,7 +119,14 @@ export const FooterSection = memo(function FooterSection() {
                   <polygon points="10 15 15 12 10 9 10 15" fill="currentColor"/>
                 </svg>
               </a>
-              <a href="#facebook" className="footer-social-btn" aria-label="Visit GraceGrid on Facebook">
+              <a 
+                href="https://www.facebook.com/profile.php?id=61593795521780" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="footer-social-btn" 
+                aria-label="Visit GraceGrid on Facebook"
+                title="Visit GraceGrid on Facebook"
+              >
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
                   <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036c-2.648 0-2.955.986-2.955 2.871v1.1h4.084l-.545 3.667h-3.539v7.98h-4.858z"/>
                 </svg>

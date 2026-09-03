@@ -16,7 +16,8 @@ import {
   MessageCircle, 
   ExternalLink, 
   Lock,
-  AlertCircle
+  AlertCircle,
+  Facebook
 } from 'lucide-react';
 import { joinWaitlist } from '../services/waitlist';
 import './WaitlistSection.css';
@@ -408,6 +409,15 @@ export const WaitlistSection = memo(function WaitlistSection({ onShowToast, onSu
                     aria-label="Share waitlist invite on X"
                   >
                     <ExternalLink size={14} aria-hidden="true" /> Share on X
+                  </a>
+                  <a 
+                    href="https://www.facebook.com/profile.php?id=61593795521780"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="social-pill-link"
+                    aria-label="Visit GraceGrid on Facebook"
+                  >
+                    <Facebook size={14} aria-hidden="true" /> Facebook
                   </a>
                 </div>
               </div>
