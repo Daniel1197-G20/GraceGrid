@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import Badge from '../components/Badge';
 import { LeafPattern } from '../components/DecorativeAssets';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
@@ -19,31 +19,29 @@ import {
   Loader2
 } from 'lucide-react';
 import { openPaystackInlineCheckout } from '../services/paystack';
+import { 
+  getSupportMilestones, 
+  subscribeToMilestoneUpdates, 
+  recordSupportDonation, 
+  DEFAULT_CAMPAIGN_MILESTONES, 
+  getCachedMilestones, 
+  ICON_MAP 
+} from '../services/supportMilestones';
 import './SupportMissionSection.css';
-
-// Campaign Milestones (No attached amounts)
-const CAMPAIGN_MILESTONES = [
-  {
-    id: 'domain',
-    title: 'GraceGrid .com Domain',
-    badgeText: 'Milestone 1',
-    icon: Globe,
-    description: 'Securing our permanent official gracegrid.com domain and dedicated SSL encryption for global fellowship, worship streaming, and community access.',
-  },
-  {
-    id: 'playstore',
-    title: 'Google Play Store Release',
-    badgeText: 'Milestone 2',
-    icon: Smartphone,
-    description: 'Acquiring the Google Play Console developer license to publish and distribute the GraceGrid Android sanctuary app directly to believers worldwide.',
-  },
-];
 
 // Preset gift amounts for standard giving app experience
 const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 25000];
 
-export const SupportMissionSection = memo(function SupportMissionSection({ onShowToast }) {
+export const SupportMissionSection = memo(function SupportMissionSection({ 
+  onShowToast,
+  campaignMilestones = DEFAULT_CAMPAIGN_MILESTONES
+}) {
   const [sectionRef, isVisible] = useIntersectionObserver({ threshold: 0.15 });
+
+  // Milestone Progress State (dynamically fetched & updated live from Supabase PostgreSQL)
+  const [milestones, setMilestones] = useState(() => {
+    return getCachedMilestones() || campaignMilestones || DEFAULT_CAMPAIGN_MILESTONES;
+  });
 
   // Giving amount state
   const [selectedAmount, setSelectedAmount] = useState(5000);
@@ -68,6 +66,16 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(null);
 
+  // Animation state for smooth progress bar fill once visible
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState('all');
+
+  useEffect(() => {
+    if (isVisible && !hasAnimated) {
+      setHasAnimated(true);
+    }
+  }, [isVisible, hasAnimated]);
+
   // Currency Formatter Helper
   const formatNaira = useCallback((val) => {
     return '₦' + Number(val).toLocaleString('en-NG');
@@ -78,6 +86,71 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
   // Paystack Public Key for inline modal & fallback payment URL
   const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
   const paystackUrl = import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid';
+
+  // Fetch live milestone progress from Supabase database & subscribe to Realtime
+  useEffect(() => {
+    let isMounted = true;
+
+    // Load initial live milestone data from database
+    getSupportMilestones().then((liveData) => {
+      if (isMounted && Array.isArray(liveData) && liveData.length > 0) {
+        setMilestones(liveData);
+      }
+    });
+
+    // Subscribe to real-time updates when any donation or milestone update occurs
+    const unsubscribe = subscribeToMilestoneUpdates((updated) => {
+      if (isMounted && Array.isArray(updated) && updated.length > 0) {
+        setMilestones(updated);
+      }
+    });
+
+    // Handle return from Paystack hosted payment page with reference in URL query
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnedRef = urlParams.get('reference') || urlParams.get('trxref');
+        if (returnedRef) {
+          const processedKey = `gg_ref_processed_${returnedRef}`;
+          if (!sessionStorage.getItem(processedKey)) {
+            sessionStorage.setItem(processedKey, 'true');
+            const storedAmt = Number(sessionStorage.getItem('gg_pending_give_amount') || 0);
+            const storedMail = sessionStorage.getItem('gg_pending_give_email') || '';
+            const storedUser = sessionStorage.getItem('gg_pending_give_name') || '';
+
+            if (storedAmt > 0) {
+              recordSupportDonation({
+                amount: storedAmt,
+                email: storedMail,
+                donorName: storedUser,
+                reference: returnedRef,
+              }).then((res) => {
+                if (isMounted && res?.milestones) {
+                  setMilestones(res.milestones);
+                }
+                if (isMounted) {
+                  setPaymentSuccess({
+                    reference: returnedRef,
+                    amount: storedAmt,
+                    email: storedMail,
+                    donorName: storedUser,
+                  });
+                }
+                if (onShowToast) {
+                  onShowToast(`Blessings! Your seed of ${formatNaira(storedAmt)} was credited to our technical launch milestones.`, 'success');
+                }
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [formatNaira, onShowToast]);
 
   const handleSelectPreset = (amount) => {
     setSelectedAmount(amount);
@@ -142,7 +215,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
           email: donorEmail.trim(),
           amount: effectiveAmount,
           donorName: donorName.trim(),
-          onSuccess: (response) => {
+          onSuccess: async (response) => {
             setIsProcessing(false);
             setPaymentSuccess({
               reference: response.reference,
@@ -150,6 +223,22 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
               email: donorEmail.trim(),
               donorName: donorName.trim(),
             });
+
+            // Dynamically record and increment milestone progress in real-time in Supabase
+            try {
+              const rec = await recordSupportDonation({
+                amount: effectiveAmount,
+                email: donorEmail.trim(),
+                donorName: donorName.trim(),
+                reference: response.reference,
+                milestoneId: selectedMilestoneId === 'all' ? null : selectedMilestoneId,
+              });
+              if (rec?.milestones) {
+                setMilestones(rec.milestones);
+              }
+            } catch (recErr) {
+              console.warn('[GraceGrid Milestones] Donation recording notice:', recErr);
+            }
 
             // Trigger mobile-safe celebratory confetti
             const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -184,12 +273,24 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
           onShowToast(`Notice: ${err.message}. Opening payment checkout page...`, 'error');
         }
         // Fallback to URL
+        try {
+          sessionStorage.setItem('gg_pending_give_amount', String(effectiveAmount));
+          sessionStorage.setItem('gg_pending_give_email', donorEmail.trim());
+          sessionStorage.setItem('gg_pending_give_name', donorName.trim());
+          sessionStorage.setItem('gg_pending_give_milestone', selectedMilestoneId || 'all');
+        } catch (_) {}
         const sep = paystackUrl.includes('?') ? '&' : '?';
         const fallbackUrl = `${paystackUrl}${sep}amount=${effectiveAmount * 100}&email=${encodeURIComponent(donorEmail.trim())}`;
         window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
       }
     } else {
       // 2. Fallback to Paystack Hosted Payment Page
+      try {
+        sessionStorage.setItem('gg_pending_give_amount', String(effectiveAmount));
+        sessionStorage.setItem('gg_pending_give_email', donorEmail.trim());
+        sessionStorage.setItem('gg_pending_give_name', donorName.trim());
+        sessionStorage.setItem('gg_pending_give_milestone', selectedMilestoneId || 'all');
+      } catch (_) {}
       if (onShowToast) {
         onShowToast(`Opening checkout for ${formatNaira(effectiveAmount)}... (Tip: Add VITE_PAYSTACK_PUBLIC_KEY in .env for in-app popup modal)`, 'info');
       }
@@ -197,7 +298,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
       const targetUrl = `${paystackUrl}${sep}amount=${effectiveAmount * 100}&email=${encodeURIComponent(donorEmail.trim())}`;
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
-  }, [effectiveAmount, donorEmail, donorName, paystackPublicKey, paystackUrl, formatNaira, onShowToast]);
+  }, [effectiveAmount, donorEmail, donorName, selectedMilestoneId, paystackPublicKey, paystackUrl, formatNaira, onShowToast]);
 
   const buttonLabel = effectiveAmount && !isNaN(effectiveAmount) && effectiveAmount > 0
     ? `Support GraceGrid (${formatNaira(effectiveAmount)})`
@@ -218,10 +319,16 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
           
           {/* Header */}
           <div className="support-card-header">
-            <Badge variant="gold" pulse={true} className="support-pill">
-              <Heart size={13} className="heart-icon-gold" aria-hidden="true" />
-              <span>Kingdom Stewardship</span>
-            </Badge>
+            <div className="support-badge-row">
+              <Badge variant="gold" pulse={true} className="support-pill">
+                <Heart size={13} className="heart-icon-gold" aria-hidden="true" />
+                <span>Kingdom Stewardship</span>
+              </Badge>
+              <span className="live-pulse-tag">
+                <span className="pulse-dot" aria-hidden="true" />
+                <span className="pulse-text">Live Milestone Tracking</span>
+              </span>
+            </div>
 
             <h2 className="support-main-title">
               Support GraceGrid
@@ -236,10 +343,15 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
             </p>
           </div>
 
-          {/* Two Campaign Milestone Cards Grid (Without attached amounts) */}
+          {/* Two Campaign Milestone Cards Grid With Transparent Targets & Progress Bars */}
           <div className="campaign-cards-grid" role="region" aria-label="Campaign Milestones">
-            {CAMPAIGN_MILESTONES.map((item) => {
-              const IconComponent = item.icon;
+            {milestones.map((item) => {
+              const IconComponent = typeof item.icon === 'function' 
+                ? item.icon 
+                : (ICON_MAP[item.icon] || Globe);
+              const percentage = Math.min(100, Math.max(0, Math.round(((item.raised || 0) / item.target) * 100)));
+              const remaining = Math.max(0, item.target - (item.raised || 0));
+
               return (
                 <div key={item.id} className="campaign-target-card">
                   <div className="campaign-card-header">
@@ -256,9 +368,46 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                     {item.description}
                   </p>
 
+                  {/* Milestone Progress Bar & Target */}
+                  <div className="campaign-amount-box">
+                    <div className="campaign-amount-row">
+                      <span className="campaign-target-label">Target Goal</span>
+                      <span className="campaign-target-val">{formatNaira(item.target)}</span>
+                    </div>
+
+                    {/* Progress Bar Track */}
+                    <div 
+                      className="campaign-mini-track"
+                      role="progressbar"
+                      aria-valuenow={percentage}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${item.title} funding progress: ${percentage}%`}
+                    >
+                      <div 
+                        className="campaign-mini-fill"
+                        style={{ width: hasAnimated ? `${percentage}%` : '0%' }}
+                      >
+                        <div className="campaign-mini-shimmer" />
+                      </div>
+                    </div>
+
+                    <div className="campaign-progress-meta">
+                      <span className="campaign-raised-text">
+                        <strong>{formatNaira(item.raised || 0)}</strong> raised ({percentage}%)
+                      </span>
+                      <span className="campaign-remaining-text">
+                        {remaining === 0 ? 'Goal Reached! 🎉' : `${formatNaira(remaining)} to go`}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="campaign-milestone-footer">
-                    <span className="milestone-status-pill">
-                      <CheckCircle2 size={13} aria-hidden="true" /> Launch Milestone
+                    <span className={`milestone-status-pill ${percentage >= 100 ? 'milestone-status-funded' : ''}`}>
+                      <CheckCircle2 size={13} aria-hidden="true" /> {percentage >= 100 ? 'Goal Reached (100%)' : `${percentage}% Funded`}
+                    </span>
+                    <span className="milestone-target-tag">
+                      Target: {formatNaira(item.target)}
                     </span>
                   </div>
                 </div>
@@ -307,7 +456,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                     <span className="giving-header-title">Choose Your Seed Amount</span>
                   </div>
                   <span className="giving-secure-tag">
-                    <Lock size={12} aria-hidden="true" /> 256-Bit SSL Encrypted
+                    <Lock size={12} aria-hidden="true" /> 
                   </span>
                 </div>
 
@@ -346,6 +495,31 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                       className="custom-amount-input"
                       aria-label="Enter custom giving amount in Naira"
                     />
+                  </div>
+                </div>
+
+                {/* Milestone Dedication Selector */}
+                <div className="milestone-dedication-block">
+                  <span className="dedication-title">Dedicate Seed Towards:</span>
+                  <div className="dedication-chips-grid" role="group" aria-label="Select milestone destination">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMilestoneId('all')}
+                      className={`dedication-chip ${selectedMilestoneId === 'all' ? 'dedication-chip-active' : ''}`}
+                    >
+                      <Sparkles size={13} className="dedication-icon" />
+                      <span>All Launch Milestones</span>
+                    </button>
+                    {milestones.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSelectedMilestoneId(m.id)}
+                        className={`dedication-chip ${selectedMilestoneId === m.id ? 'dedication-chip-active' : ''}`}
+                      >
+                        <span>{m.badgeText}: {m.title.replace('GraceGrid ', '')}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -437,7 +611,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                     <Zap size={13} aria-hidden="true" /> USSD &bull; Apple Pay
                   </span>
                   <span className="channel-pill">
-                    <ShieldCheck size={13} aria-hidden="true" /> PCI-DSS Certified
+                    <ShieldCheck size={13} aria-hidden="true" />
                   </span>
                 </div>
               </>
@@ -451,7 +625,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                 <ShieldCheck size={20} className="shield-icon-green" aria-hidden="true" />
                 <h3 className="transparency-heading">What your support funds</h3>
               </div>
-              <span className="transparency-pill">100% Transparent Stewardship</span>
+              <span className="transparency-pill"></span>
             </div>
 
             <p className="transparency-intro">
@@ -480,7 +654,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({ onSho
                 <div className="transparency-item-main">
                   <span className="transparency-item-icon" aria-hidden="true">📱</span>
                   <div className="transparency-item-details">
-                    <span className="transparency-item-name">Google Play Store Developer Account</span>
+                    <span className="transparency-item-name">Google Play Store </span>
                     <span className="transparency-item-desc">
                       Google Play Console registration enabling immediate global download on Android devices.
                     </span>

@@ -48,8 +48,19 @@ import {
   CheckCircle2,
   AlertCircle,
   Database,
-  Plus
+  Plus,
+  Globe,
+  Smartphone,
+  Heart,
+  DollarSign
 } from 'lucide-react';
+import { 
+  getSupportMilestones, 
+  adminUpdateMilestone, 
+  fetchAdminDonations, 
+  subscribeToMilestoneUpdates,
+  ICON_MAP
+} from '../../services/supportMilestones';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -99,9 +110,22 @@ export default function AdminDashboard() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState(null);
 
+  // Support Milestones & Stewardship State
+  const [adminMilestones, setAdminMilestones] = useState([]);
+  const [adminDonations, setAdminDonations] = useState([]);
+  const [isLoadingStewardship, setIsLoadingStewardship] = useState(false);
+  const [editingMilestoneId, setEditingMilestoneId] = useState(null);
+  const [editMilestoneForm, setEditMilestoneForm] = useState({ target: '', raised: '', title: '', description: '' });
+  const [isSavingMilestone, setIsSavingMilestone] = useState(false);
+
   const showToast = useCallback((msg, type = 'success') => {
     setToastMessage({ msg, type });
     setTimeout(() => setToastMessage(null), 3800);
+  }, []);
+
+  // Currency Formatter Helper
+  const formatNaira = useCallback((val) => {
+    return '₦' + Number(val || 0).toLocaleString('en-NG');
   }, []);
 
   // Fetch subscribers from Supabase
@@ -123,11 +147,85 @@ export default function AdminDashboard() {
     }
   }, [showToast]);
 
+  // Fetch stewardship milestones & donations from Supabase
+  const loadStewardshipData = useCallback(async (showSpin = false) => {
+    if (showSpin) setIsLoadingStewardship(true);
+    try {
+      const [mList, dList] = await Promise.all([
+        getSupportMilestones(true),
+        fetchAdminDonations(100),
+      ]);
+      if (Array.isArray(mList)) setAdminMilestones(mList);
+      if (Array.isArray(dList)) setAdminDonations(dList);
+      if (showSpin) {
+        showToast('Milestones & donations refreshed.', 'success');
+      }
+    } catch (err) {
+      console.warn('[Admin Dashboard] Stewardship load error:', err);
+      if (showSpin) {
+        showToast('Failed to refresh stewardship data.', 'error');
+      }
+    } finally {
+      if (showSpin) setIsLoadingStewardship(false);
+    }
+  }, [showToast]);
+
+  const handleStartEditMilestone = (milestone) => {
+    setEditingMilestoneId(milestone.id);
+    setEditMilestoneForm({
+      target: milestone.target,
+      raised: milestone.raised,
+      title: milestone.title,
+      description: milestone.description,
+    });
+  };
+
+  const handleCancelEditMilestone = () => {
+    setEditingMilestoneId(null);
+    setEditMilestoneForm({ target: '', raised: '', title: '', description: '' });
+  };
+
+  const handleSaveMilestone = async (id) => {
+    setIsSavingMilestone(true);
+    try {
+      await adminUpdateMilestone({
+        id,
+        target: Number(editMilestoneForm.target),
+        raised: Number(editMilestoneForm.raised),
+        title: editMilestoneForm.title,
+        description: editMilestoneForm.description,
+      });
+      showToast('Milestone updated live in database!', 'success');
+      setEditingMilestoneId(null);
+      const fresh = await getSupportMilestones(true);
+      setAdminMilestones(fresh);
+    } catch (err) {
+      showToast(`Failed to update milestone: ${err.message}`, 'error');
+    } finally {
+      setIsSavingMilestone(false);
+    }
+  };
+
+  // Compute stewardship summary metrics
+  const stewardshipStats = useMemo(() => {
+    const totalTarget = adminMilestones.reduce((sum, m) => sum + (Number(m.target) || 0), 0);
+    const totalRaised = adminMilestones.reduce((sum, m) => sum + (Number(m.raised) || 0), 0);
+    const percentage = totalTarget > 0 ? Math.min(100, Math.round((totalRaised / totalTarget) * 100)) : 0;
+    const totalGiftsCount = adminDonations.length;
+    return {
+      totalTarget,
+      totalRaised,
+      percentage,
+      totalGiftsCount,
+    };
+  }, [adminMilestones, adminDonations]);
+
   // Initial load & real-time sync
   useEffect(() => {
     loadSubscribers();
+    loadStewardshipData();
 
-    const unsubscribe = subscribeToWaitlistUpdates((newEntry) => {
+    const unsubscribeWaitlist = subscribeToWaitlistUpdates((newEntry) => {
       setSubscribers((prev) => {
         const exists = prev.some(
           (s) => s.id === newEntry.id || s.email?.toLowerCase() === newEntry.email?.toLowerCase()
@@ -148,10 +246,17 @@ export default function AdminDashboard() {
       setLastUpdated(new Date());
     });
 
+    const unsubscribeMilestones = subscribeToMilestoneUpdates((fresh) => {
+      if (Array.isArray(fresh) && fresh.length > 0) {
+        setAdminMilestones(fresh);
+      }
+    });
+
     return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
+      if (typeof unsubscribeWaitlist === 'function') unsubscribeWaitlist();
+      if (typeof unsubscribeMilestones === 'function') unsubscribeMilestones();
     };
-  }, [loadSubscribers, showToast]);
+  }, [loadSubscribers, loadStewardshipData, showToast]);
 
   // Compute metrics
   const totalSubscribers = subscribers.length;
@@ -1172,32 +1277,336 @@ export default function AdminDashboard() {
 
           {/* =====================================================================
               TAB 3: STEWARDSHIP / TREASURY DETAILS
+          {/* =====================================================================
+              TAB 3: STEWARDSHIP & SUPPORT MILESTONES MANAGEMENT
               ===================================================================== */}
           {activeTab === 'treasury' && (
-            <div className="treasury-card glass-card-dark">
-              <div className="treasury-header">
-                <CreditCard size={24} className="treasury-gold-icon" />
+            <div className="stewardship-dashboard-wrapper">
+              
+              {/* Stewardship Header */}
+              <div className="stewardship-header-row">
                 <div>
-                  <h2 className="treasury-title">Stewardship & Payment Gateway (Paystack)</h2>
-                  <p className="treasury-desc">Configured Paystack gateway details for online kingdom giving.</p>
+                  <h2 className="section-title">Support Milestones & Stewardship</h2>
+                  <p className="section-subtitle">
+                    Live database-backed milestone progress bars, real-time targets, and verified Paystack giving.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => loadStewardshipData(true)}
+                  disabled={isLoadingStewardship}
+                  className="btn-refresh-data"
+                  title="Refresh live milestone and donation data"
+                >
+                  <RefreshCw size={16} className={isLoadingStewardship ? 'spin-icon' : ''} />
+                  <span>{isLoadingStewardship ? 'Refreshing...' : 'Refresh Live Data'}</span>
+                </button>
+              </div>
+
+              {/* 4 Stewardship Summary Metric Cards */}
+              <div className="stewardship-metrics-grid">
+                <div className="stewardship-stat-card">
+                  <div className="stat-card-icon-wrap icon-gold">
+                    <Flame size={22} />
+                  </div>
+                  <div className="stat-card-info">
+                    <span className="stat-card-label">Total Raised Live</span>
+                    <span className="stat-card-value stat-value-gold">
+                      {formatNaira(stewardshipStats.totalRaised)}
+                    </span>
+                    <span className="stat-card-hint">Across all pre-launch targets</span>
+                  </div>
+                </div>
+
+                <div className="stewardship-stat-card">
+                  <div className="stat-card-icon-wrap icon-blue">
+                    <Target size={22} />
+                  </div>
+                  <div className="stat-card-info">
+                    <span className="stat-card-label">Combined Target Goal</span>
+                    <span className="stat-card-value">
+                      {formatNaira(stewardshipStats.totalTarget)}
+                    </span>
+                    <span className="stat-card-hint">Two launch milestones</span>
+                  </div>
+                </div>
+
+                <div className="stewardship-stat-card">
+                  <div className="stat-card-icon-wrap icon-emerald">
+                    <TrendingUp size={22} />
+                  </div>
+                  <div className="stat-card-info">
+                    <span className="stat-card-label">Funding Progress</span>
+                    <span className="stat-card-value stat-value-emerald">
+                      {stewardshipStats.percentage}%
+                    </span>
+                    <span className="stat-card-hint">
+                      {formatNaira(Math.max(0, stewardshipStats.totalTarget - stewardshipStats.totalRaised))} remaining
+                    </span>
+                  </div>
+                </div>
+
+                <div className="stewardship-stat-card">
+                  <div className="stat-card-icon-wrap icon-purple">
+                    <CreditCard size={22} />
+                  </div>
+                  <div className="stat-card-info">
+                    <span className="stat-card-label">Recorded Seeds</span>
+                    <span className="stat-card-value">
+                      {stewardshipStats.totalGiftsCount}
+                    </span>
+                    <span className="stat-card-hint">Verified donations logged</span>
+                  </div>
                 </div>
               </div>
-              <div className="treasury-grid">
-                <div className="treasury-item">
-                  <span className="treasury-item-label">Payment Gateway</span>
-                  <span className="treasury-item-val">Paystack</span>
-                </div>
-                <div className="treasury-item">
-                  <span className="treasury-item-label">Supported Channels</span>
-                  <span className="treasury-item-val">Cards · Bank Transfer · USSD · Apple Pay</span>
-                </div>
-                <div className="treasury-item">
-                  <span className="treasury-item-label">Giving Page Link</span>
-                  <span className="treasury-item-val highlight-number">
-                    {import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid'}
+
+              {/* Live Support Milestones Section */}
+              <div className="stewardship-section-card glass-card-dark">
+                <div className="stewardship-card-top">
+                  <div className="stewardship-card-title-group">
+                    <Target size={22} className="gold-text-icon" />
+                    <div>
+                      <h3 className="stewardship-card-title">Live Campaign Milestones & Progress Bars</h3>
+                      <p className="stewardship-card-desc">
+                        These progress bars update live on the landing page whenever a supporter sows a seed or when modified here.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="live-db-pill">
+                    <span className="pulse-dot" aria-hidden="true" />
+                    <span>Realtime Supabase Sync</span>
                   </span>
                 </div>
+
+                <div className="milestone-admin-grid">
+                  {adminMilestones.map((m) => {
+                    const IconComponent = typeof m.icon === 'function' ? m.icon : (ICON_MAP[m.icon] || Globe);
+                    const pct = Math.min(100, Math.max(0, Math.round(((m.raised || 0) / (m.target || 1)) * 100)));
+                    const remaining = Math.max(0, (m.target || 0) - (m.raised || 0));
+                    const isEditing = editingMilestoneId === m.id;
+
+                    return (
+                      <div key={m.id} className="milestone-admin-card">
+                        <div className="m-card-header">
+                          <div className="m-icon-badge">
+                            <IconComponent size={20} />
+                          </div>
+                          <div className="m-meta">
+                            <span className="m-badge-text">{m.badgeText}</span>
+                            <h4 className="m-title">{m.title}</h4>
+                          </div>
+                        </div>
+
+                        <p className="m-desc">{m.description}</p>
+
+                        {/* Live Progress Bar Track */}
+                        <div className="m-progress-block">
+                          <div className="m-progress-header">
+                            <span className="m-target-lbl">Goal: {formatNaira(m.target)}</span>
+                            <span className="m-raised-lbl">{formatNaira(m.raised)} raised</span>
+                          </div>
+                          <div 
+                            className="m-progress-track"
+                            role="progressbar"
+                            aria-valuenow={pct}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          >
+                            <div className="m-progress-fill" style={{ width: `${pct}%` }}>
+                              <div className="m-progress-shimmer" />
+                            </div>
+                          </div>
+                          <div className="m-progress-footer">
+                            <span className="m-pct-tag">{pct}% Funded</span>
+                            <span className="m-rem-tag">
+                              {remaining === 0 ? 'Goal Reached! 🎉' : `${formatNaira(remaining)} to go`}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Edit Form or Action Button */}
+                        {isEditing ? (
+                          <div className="milestone-inline-edit-box">
+                            <h5 className="edit-box-title">Adjust Milestone Live</h5>
+                            <div className="edit-fields-row">
+                              <div className="edit-field">
+                                <label className="edit-lbl">Target Amount (₦)</label>
+                                <input
+                                  type="number"
+                                  value={editMilestoneForm.target}
+                                  onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, target: e.target.value })}
+                                  className="edit-input"
+                                  min="0"
+                                />
+                              </div>
+                              <div className="edit-field">
+                                <label className="edit-lbl">Raised Amount (₦)</label>
+                                <input
+                                  type="number"
+                                  value={editMilestoneForm.raised}
+                                  onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, raised: e.target.value })}
+                                  className="edit-input"
+                                  min="0"
+                                />
+                              </div>
+                            </div>
+                            <div className="edit-field">
+                              <label className="edit-lbl">Milestone Title</label>
+                              <input
+                                type="text"
+                                value={editMilestoneForm.title}
+                                onChange={(e) => setEditMilestoneForm({ ...editMilestoneForm, title: e.target.value })}
+                                className="edit-input"
+                              />
+                            </div>
+                            <div className="edit-actions-row">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveMilestone(m.id)}
+                                disabled={isSavingMilestone}
+                                className="btn-save-milestone"
+                              >
+                                {isSavingMilestone ? 'Saving to DB...' : 'Save Live Changes'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelEditMilestone}
+                                disabled={isSavingMilestone}
+                                className="btn-cancel-edit"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="m-actions">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditMilestone(m)}
+                              className="btn-edit-milestone"
+                            >
+                              <Edit2 size={14} />
+                              <span>Adjust Target / Raised</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Verified Stewardship Donations Table */}
+              <div className="stewardship-section-card glass-card-dark">
+                <div className="stewardship-card-top">
+                  <div className="stewardship-card-title-group">
+                    <CreditCard size={22} className="gold-text-icon" />
+                    <div>
+                      <h3 className="stewardship-card-title">Verified Stewardship Gifts</h3>
+                      <p className="stewardship-card-desc">
+                        Audit trail of donations credited to GraceGrid technical launch milestones.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="donations-count-badge">
+                    {adminDonations.length} {adminDonations.length === 1 ? 'Gift' : 'Gifts'}
+                  </span>
+                </div>
+
+                {adminDonations.length === 0 ? (
+                  <div className="donations-empty-state">
+                    <HeartHandshake size={36} className="empty-handshake-icon" />
+                    <h4 className="empty-title">No Online Seeds Logged Yet</h4>
+                    <p className="empty-desc">
+                      When supporters sow into GraceGrid via the Paystack giving card, transactions will be verified and recorded here live.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Donor</th>
+                          <th>Amount</th>
+                          <th>Reference</th>
+                          <th>Milestone</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adminDonations.map((gift) => (
+                          <tr key={gift.id}>
+                            <td>
+                              <div className="donor-col">
+                                <span className="donor-col-name">{gift.donorName || 'Anonymous Believer'}</span>
+                                <span className="donor-col-email">{gift.email}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <strong className="gift-col-amount">{formatNaira(gift.amount)}</strong>
+                            </td>
+                            <td>
+                              <span className="ref-code" title={gift.reference}>
+                                {gift.reference ? gift.reference.slice(0, 16) + '...' : 'N/A'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="milestone-badge-pill">
+                                {gift.milestoneId || 'All Technical Milestones'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="status-pill status-verified">
+                                <CheckCircle2 size={12} /> Verified
+                              </span>
+                            </td>
+                            <td>
+                              <span className="date-col-text">
+                                {formatFullDateTime(gift.createdAt)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Gateway Configuration Details */}
+              <div className="treasury-card glass-card-dark">
+                <div className="treasury-header">
+                  <CreditCard size={24} className="treasury-gold-icon" />
+                  <div>
+                    <h3 className="treasury-title">Stewardship Payment Gateway (Paystack)</h3>
+                    <p className="treasury-desc">Configured Paystack gateway details for online kingdom giving.</p>
+                  </div>
+                </div>
+                <div className="treasury-grid">
+                  <div className="treasury-item">
+                    <span className="treasury-item-label">Payment Gateway</span>
+                    <span className="treasury-item-val">Paystack</span>
+                  </div>
+                  <div className="treasury-item">
+                    <span className="treasury-item-label">Inline Popup Modal</span>
+                    <span className="treasury-item-val">
+                      {import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ? 'Active (In-App)' : 'Fallback URL Mode'}
+                    </span>
+                  </div>
+                  <div className="treasury-item">
+                    <span className="treasury-item-label">Supported Channels</span>
+                    <span className="treasury-item-val">Cards · Bank Transfer · USSD · Apple Pay</span>
+                  </div>
+                  <div className="treasury-item">
+                    <span className="treasury-item-label">Giving Page Link</span>
+                    <span className="treasury-item-val highlight-number">
+                      {import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 

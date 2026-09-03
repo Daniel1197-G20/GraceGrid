@@ -1406,3 +1406,542 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==============================================================================
+   STEWARDSHIP & SUPPORT MILESTONES DASHBOARD
+   ============================================================================== */
+
+.stewardship-dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stewardship-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.stewardship-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.stewardship-stat-card {
+  background: rgba(4, 30, 16, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.icon-gold {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.icon-blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.icon-emerald {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ADE80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.icon-purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.stat-value-gold {
+  color: #FCD34D !important;
+}
+
+.stat-value-emerald {
+  color: #4ADE80 !important;
+}
+
+.stewardship-section-card {
+  background: rgba(2, 28, 13, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stewardship-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1rem;
+}
+
+.stewardship-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gold-text-icon {
+  color: #F59E0B;
+}
+
+.stewardship-card-title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #F0FDF4;
+  margin: 0 0 0.2rem 0;
+}
+
+.stewardship-card-desc {
+  font-size: 0.8125rem;
+  color: #86EFAC;
+  margin: 0;
+}
+
+.live-db-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #86EFAC;
+}
+
+.donations-count-badge {
+  background: rgba(217, 119, 6, 0.15);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FDE68A;
+}
+
+/* Milestone Cards in Admin */
+.milestone-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.milestone-admin-card {
+  background: rgba(3, 38, 18, 0.6);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: var(--radius-md);
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.m-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.m-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4ADE80;
+  flex-shrink: 0;
+}
+
+.m-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-badge-text {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #F59E0B;
+}
+
+.m-title {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.m-desc {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #DCFCE7;
+  margin: 0;
+}
+
+/* Progress Block */
+.m-progress-block {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.m-progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.m-target-lbl {
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.m-raised-lbl {
+  color: #4ADE80;
+  font-weight: 700;
+}
+
+.m-progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.m-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.m-progress-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: adminShimmer 2s infinite;
+}
+
+@keyframes adminShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.m-progress-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.m-pct-tag {
+  color: #FCD34D;
+  font-weight: 700;
+}
+
+.m-rem-tag {
+  color: #86EFAC;
+}
+
+/* Edit form in card */
+.milestone-inline-edit-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edit-box-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #FBBF24;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.edit-fields-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.edit-lbl {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: #86EFAC;
+  text-transform: uppercase;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: rgba(2, 28, 13, 0.85);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.edit-input:focus {
+  border-color: #22C55E;
+}
+
+.edit-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.btn-save-milestone {
+  padding: 0.5rem 1rem;
+  background: #16A34A;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save-milestone:hover {
+  background: #22C55E;
+}
+
+.btn-cancel-edit {
+  padding: 0.5rem 0.85rem;
+  background: transparent;
+  color: #94A3B8;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.btn-cancel-edit:hover {
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.m-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-edit-milestone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86EFAC;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit-milestone:hover {
+  background: rgba(34, 197, 94, 0.25);
+  color: #FFFFFF;
+}
+
+/* Donations table & empty state */
+.donations-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.empty-handshake-icon {
+  color: #4ADE80;
+  opacity: 0.8;
+}
+
+.empty-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #F0FDF4;
+  margin: 0;
+}
+
+.empty-desc {
+  font-size: 0.85rem;
+  color: #86EFAC;
+  max-width: 460px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.donor-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.donor-col-name {
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.donor-col-email {
+  font-size: 0.75rem;
+  color: #94A3B8;
+}
+
+.gift-col-amount {
+  font-family: monospace;
+  font-size: 0.95rem;
+  color: #4ADE80;
+}
+
+.ref-code {
+  font-family: monospace;
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  color: #CBD5E1;
+}
+
+.milestone-badge-pill {
+  font-size: 0.725rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93C5FD;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-pill);
+}
+
+.status-verified {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ADE80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.date-col-text {
+  font-size: 0.775rem;
+  color: #94A3B8;
+}
+
+/* Treasury Gateway Card */
+.treasury-card {
+  background: rgba(2, 28, 13, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.treasury-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.treasury-gold-icon {
+  color: #F59E0B;
+}
+
+.treasury-title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #F0FDF4;
+  margin: 0 0 0.2rem 0;
+}
+
+.treasury-desc {
+  font-size: 0.8125rem;
+  color: #86EFAC;
+  margin: 0;
+}
+
+.treasury-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.treasury-item {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.treasury-item-label {
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #86EFAC;
+}
+
+.treasury-item-val {
+  font-size: 0.875rem;
+  color: #FFFFFF;
+}
+

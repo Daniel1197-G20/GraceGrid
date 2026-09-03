@@ -54,10 +54,55 @@
   gap: 0.75rem;
 }
 
+.support-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .support-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.support-card-header .live-pulse-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(254, 243, 199, 0.6);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400E;
+}
+
+.support-card-header .pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #D97706;
+  position: relative;
+}
+
+.support-card-header .pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: rgba(217, 119, 6, 0.5);
+  animation: goldPulse 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes goldPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
 }
 
 .heart-icon-gold {
@@ -171,10 +216,100 @@
   flex-grow: 1;
 }
 
+.campaign-amount-box {
+  background: rgba(240, 253, 244, 0.85);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: var(--radius-md);
+  padding: 0.95rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.campaign-amount-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.campaign-target-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.campaign-target-val {
+  font-family: var(--font-heading), monospace;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #15803D;
+}
+
+.campaign-mini-track {
+  width: 100%;
+  height: 9px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.campaign-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.campaign-mini-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  opacity: 0.7;
+}
+
+.campaign-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.campaign-raised-text strong {
+  color: #166534;
+}
+
+.campaign-remaining-text {
+  color: #15803D;
+  font-weight: 600;
+}
+
 .campaign-milestone-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-top: 0.25rem;
+}
+
+.milestone-target-tag {
+  font-size: 0.785rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .milestone-status-pill {
@@ -191,6 +326,66 @@
   border: 1px solid rgba(22, 163, 74, 0.25);
   padding: 0.3rem 0.75rem;
   border-radius: var(--radius-pill);
+}
+
+.milestone-status-funded {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: rgba(217, 119, 6, 0.4);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+}
+
+/* ==============================================================================
+   Milestone Dedication Selector
+   ============================================================================== */
+.milestone-dedication-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dedication-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dedication-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dedication-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid rgba(22, 163, 74, 0.2);
+  background: #FFFFFF;
+  color: #166534;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dedication-chip:hover {
+  border-color: #16A34A;
+  background: #F0FDF4;
+}
+
+.dedication-chip-active {
+  background: #15803D !important;
+  color: #FFFFFF !important;
+  border-color: #15803D !important;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.25);
+}
+
+.dedication-icon {
+  color: inherit;
 }
 
 /* ==============================================================================
