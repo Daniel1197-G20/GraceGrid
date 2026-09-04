@@ -85,7 +85,7 @@ export const SupportMissionSection = memo(function SupportMissionSection({
 
   // Paystack Public Key for inline modal & fallback payment URL
   const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
-  const paystackUrl = import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid';
+  const paystackUrl = import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.shop/pay/h01ogzzk5k';
 
   // Fetch live milestone progress from Supabase database & subscribe to Realtime
   useEffect(() => {

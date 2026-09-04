@@ -1601,7 +1601,7 @@ export default function AdminDashboard() {
                   <div className="treasury-item">
                     <span className="treasury-item-label">Giving Page Link</span>
                     <span className="treasury-item-val highlight-number">
-                      {import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.com/pay/gracegrid'}
+                      {import.meta.env.VITE_PAYSTACK_PAYMENT_URL || 'https://paystack.shop/pay/h01ogzzk5k'}
                     </span>
                   </div>
                 </div>
