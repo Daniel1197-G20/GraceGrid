@@ -69,7 +69,27 @@
   justify-content: space-between;
   padding: 1.5rem 1.25rem;
   z-index: 100;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Sidebar Mobile Backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 99;
+  animation: backdropFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .sidebar-header {
@@ -601,8 +621,8 @@
   height: 100%;
   background: linear-gradient(90deg, #16A34A 0%, #22C55E 50%, #D4AF37 100%);
   border-radius: 999px;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  transform: translateZ(0);
 }
 
 .progress-labels-row {
@@ -1648,7 +1668,7 @@
   background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
   border-radius: var(--radius-pill);
   position: relative;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateZ(0);
 }
 
 .m-progress-shimmer {
@@ -1944,4 +1964,572 @@
   font-size: 0.875rem;
   color: #FFFFFF;
 }
+
+/* ==============================================================================
+   MOBILE RESPONSIVENESS & HIGH FRAME RATE (60fps / 120fps) OPTIMIZATIONS
+   ============================================================================== */
+
+/* Hardware acceleration & render isolation */
+.admin-sidebar,
+.admin-toast,
+.metric-card,
+.stewardship-stat-card,
+.stewardship-section-card,
+.broadcast-surface-card,
+.subscriber-row,
+.admin-table tr {
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* 120Hz Fast-Scroll Content Visibility */
+.subscriber-row {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 140px;
+}
+
+.admin-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 80px;
+}
+
+/* Touch micro-interactions for tactile feedback */
+@media (hover: none) and (pointer: coarse) {
+  .btn-topbar-action:active,
+  .role-filter-btn:active,
+  .btn-copy-email:active,
+  .btn-delete-row:active,
+  .btn-pagination-nav:active,
+  .btn-sidebar-logout:active,
+  .btn-save-milestone:active,
+  .btn-edit-milestone:active {
+    transform: scale(0.96) translateZ(0);
+    transition: transform 0.08s ease-out;
+  }
+}
+
+/* ------------------------------------------------------------------------------
+   TABLET & SMALL LAPTOP BREAKPOINT (<= 1024px)
+   ------------------------------------------------------------------------------ */
+@media (max-width: 1024px) {
+  /* Layout: Convert Sidebar into Off-Canvas Drawer */
+  .admin-layout {
+    overflow-x: hidden;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, 86vw);
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1000;
+    transform: translate3d(-100%, 0, 0);
+    box-shadow: none;
+    border-right: 1px solid rgba(74, 222, 128, 0.25);
+    background: rgba(3, 26, 13, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  .admin-sidebar.sidebar-open {
+    transform: translate3d(0, 0, 0);
+    box-shadow: 16px 0 60px rgba(0, 0, 0, 0.85);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    cursor: pointer;
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+
+  .mobile-hamburger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  .admin-main-surface {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  /* Broadcast Form Column Stack */
+  .broadcast-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+}
+
+/* ------------------------------------------------------------------------------
+   MOBILE & PHABLET BREAKPOINT (<= 768px)
+   ------------------------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Topbar Mobile Density */
+  .admin-topbar {
+    padding: 0.85rem 1rem;
+    padding-top: max(0.85rem, env(safe-area-inset-top));
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    background: rgba(3, 26, 13, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .topbar-left {
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar-title {
+    font-size: 1.15rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-subtitle {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+
+  .realtime-status-badge {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .status-label {
+    display: none;
+  }
+
+  .btn-topbar-action {
+    padding: 0.45rem 0.75rem;
+    min-height: 40px;
+    font-size: 0.775rem;
+  }
+
+  .btn-export-csv span {
+    display: none;
+  }
+
+  .btn-export-csv {
+    padding: 0.45rem 0.65rem;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Main Content Body */
+  .admin-content-body {
+    padding: 1rem 0.85rem;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    gap: 1.25rem;
+  }
+
+  /* Metrics Grid: 2 Columns on Phablets */
+  .metrics-cards-grid,
+  .stewardship-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .metric-card {
+    padding: 1rem 0.85rem;
+    border-radius: var(--radius-lg);
+    gap: 0.65rem;
+  }
+
+  .metric-card-inner {
+    gap: 0.65rem;
+  }
+
+  .metric-icon-box {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
+  }
+
+  .metric-value {
+    font-size: 1.45rem;
+  }
+
+  .metric-denom {
+    font-size: 0.9rem;
+  }
+
+  .metric-footer-text {
+    font-size: 0.7rem;
+  }
+
+  /* Table Toolbar & Filters */
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .search-input-wrapper {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .table-search-input {
+    font-size: 16px; /* Prevents auto-zoom in mobile Safari */
+    min-height: 44px;
+    padding: 0.75rem 2.25rem 0.75rem 2.65rem;
+  }
+
+  /* Touch-scrollable Role Filter Pills Carousel */
+  .role-filters-row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.5rem;
+    padding: 0.2rem 0 0.5rem;
+    width: 100%;
+  }
+
+  .role-filters-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .role-filter-btn {
+    flex-shrink: 0;
+    min-height: 38px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  /* Table Meta Summary Bar */
+  .table-summary-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  /* ============================================================================
+     WAITLIST TABLE -> HIGH PERFORMANCE MOBILE TOUCH CARDS
+     ============================================================================ */
+  .table-responsive-wrapper {
+    border: none;
+    background: transparent;
+    overflow-x: visible;
+  }
+
+  .subscribers-table thead {
+    display: none;
+  }
+
+  .subscribers-table,
+  .subscribers-table tbody,
+  .subscribers-table tr,
+  .subscribers-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .subscriber-row {
+    background: rgba(3, 26, 13, 0.85);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    border-radius: var(--radius-lg);
+    margin-bottom: 0.85rem;
+    padding: 1rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .index-cell {
+    display: none;
+  }
+
+  .user-name-cell {
+    padding: 0 0 0.65rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .believer-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
+  }
+
+  .full-name-text {
+    font-size: 0.95rem;
+  }
+
+  .email-cell {
+    padding: 0.65rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    word-break: break-all;
+  }
+
+  .email-text {
+    font-size: 0.825rem;
+    color: #CBD5E1;
+  }
+
+  .role-cell {
+    padding: 0.65rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .role-display-row {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .date-cell {
+    padding: 0.65rem 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .date-group {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .actions-cell {
+    padding: 0.75rem 0 0 0 !important;
+    border-bottom: none !important;
+  }
+
+  .row-actions-group {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .btn-copy-email {
+    min-height: 40px;
+    flex: 1;
+    justify-content: center;
+    font-size: 0.8125rem;
+  }
+
+  .btn-delete-row {
+    min-width: 44px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  /* Table Pagination Mobile Stack */
+  .table-pagination-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .pagination-items-per-page {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pagination-page-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .btn-pagination-nav {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* ============================================================================
+     DONATIONS TABLE -> MOBILE CARDS
+     ============================================================================ */
+  .table-wrapper {
+    overflow-x: visible;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-table tr {
+    background: rgba(3, 26, 13, 0.8);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    border-radius: var(--radius-lg);
+    margin-bottom: 0.85rem;
+    padding: 1rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .admin-table td {
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .admin-table td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  /* Broadcast Tab Mobile Adjustments */
+  .broadcast-surface-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .broadcast-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .b-input,
+  .b-textarea,
+  .b-select {
+    font-size: 16px; /* Prevents auto-zoom on iOS */
+    min-height: 44px;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .broadcast-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .btn-broadcast-main,
+  .btn-broadcast-test {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    font-size: 0.95rem;
+  }
+
+  .email-preview-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Treasury & Milestones Tab Mobile */
+  .stewardship-section-card,
+  .treasury-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .milestone-admin-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .edit-fields-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .edit-actions-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-save-milestone,
+  .btn-cancel-edit {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .treasury-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Toast Notification Mobile Positioning */
+  .admin-toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    width: auto;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.825rem;
+  }
+}
+
+/* ------------------------------------------------------------------------------
+   TINY SCREENS BREAKPOINT (<= 420px)
+   ------------------------------------------------------------------------------ */
+@media (max-width: 420px) {
+  .metrics-cards-grid,
+  .stewardship-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .realtime-status-badge {
+    margin-right: auto;
+  }
+}
+
+/* ------------------------------------------------------------------------------
+   PREFERS-REDUCED-MOTION (Accessibility)
+   ------------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar,
+  .admin-toast,
+  .pulse-dot,
+  .spin-icon,
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 
